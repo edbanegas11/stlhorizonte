@@ -44,3 +44,14 @@ section {
 .nav-active {
   color: #2563eb !important; /* Azul de Tailwind */
 }
+
+.custom-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #E2E8F0; /* Slate-200 */
+    border-radius: 10px;
+}
