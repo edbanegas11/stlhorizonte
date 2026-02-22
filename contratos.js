@@ -38,31 +38,29 @@ let catIngresos = []; // Valores por defecto
 
 // --- 1. ACCIONES DE FIREBASE ---
 window.saveIncome = async () => {
-    const elDesc = document.getElementById('in-description'); // Nuevo campo
+    // 1. Solo obtenemos los campos que SÍ están en tu HTML
     const elAmount = document.getElementById('in-amount');
     const elUnit = document.getElementById('in-unit');
     const elCategory = document.getElementById('in-category');
 
-    // Validamos que la descripción también esté llena
-    if (!elDesc.value || !elAmount.value || !elUnit.value || !elCategory.value) {
-        return alert("⚠️ Faltan datos: Asegúrate de incluir una descripción.");
+    // 2. Validamos que los campos tengan datos
+    if (!elAmount.value || !elUnit.value || !elCategory.value) {
+        return alert("⚠️ Faltan datos: Por favor llena todos los campos.");
     }
 
     try {
         await addDoc(collection(db, 'usuarios', USER_ID, 'movimientos'), {
             type: 'income',
-            // .toUpperCase() asegura que se guarde en mayúsculas aunque el HTML falle
-            description: elDesc.value.trim().toUpperCase(), 
+            // Usamos el valor de la categoría como descripción automáticamente
+            description: elCategory.value.trim().toUpperCase(), 
             amount: parseFloat(elAmount.value),
             category: elCategory.value,
             unit: elUnit.value,
-            // Agregamos la fecha actual para que funcionen tus reportes mensuales
             date: new Date().toISOString().split('T')[0],
             createdAt: serverTimestamp()
         });
 
-        // --- Limpieza de campos tras el éxito ---
-        elDesc.value = '';
+        // --- Limpieza de campos ---
         elAmount.value = '';        
         elUnit.selectedIndex = 0;   
         elCategory.selectedIndex = 0;
@@ -74,6 +72,14 @@ window.saveIncome = async () => {
     } catch (e) { 
         console.error("Error al guardar:", e); 
         alert("❌ No se pudo guardar el ingreso");
+    }
+};
+
+// Asegúrate de agregar "window." al principio
+window.closeEditModal = () => {
+    const modal = document.getElementById('modal-edit');
+    if (modal) {
+        modal.classList.add('hidden');
     }
 };
 
@@ -89,6 +95,7 @@ window.editTransaction = (id) => {
 
     document.getElementById('edit-id').value = id;
 
+    // Llenar unidades
     unitSelect.innerHTML = unidadesConfig.map(u => 
         `<option value="${u}" ${u === t.unit ? 'selected' : ''}>${u}</option>`
     ).join('');
@@ -98,14 +105,6 @@ window.editTransaction = (id) => {
         title.className = "text-lg font-black text-green-600 uppercase italic";
         
         catContainer.innerHTML = `
-            <div>
-                <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Descripción / Viaje</p>
-                <input type="text" id="edit-description-income" 
-                    value="${t.description || ''}" 
-                    oninput="this.value = this.value.toUpperCase()"
-                    class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none border-none focus:ring-2 focus:ring-green-500 uppercase" 
-                    placeholder="EJ: VIAJE A COPAN">
-            </div>
             <div>
                 <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Monto Lps</p>
                 <input type="number" id="edit-amount-income" value="${t.amount}" 
@@ -119,12 +118,13 @@ window.editTransaction = (id) => {
             </div>
         `;
     } else {
+        // ... (Tu código de Gastos está excelente, mantén el scroll-y para el iPhone)
         title.innerText = "Editar Gasto";
         title.className = "text-lg font-black text-red-600 uppercase italic";
 
         catContainer.innerHTML = `
             <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1 text-center italic">Detalle de Gasto</p>
-            <div class="grid grid-cols-1 gap-3 max-h-[45vh] overflow-y-auto pr-2">
+            <div class="grid grid-cols-1 gap-3 max-h-[40vh] overflow-y-auto pr-2 custom-scroll">
                 ${catEgresos.map(cat => {
                     const esMismaCat = (t.category === cat);
                     const montoValue = esMismaCat ? t.amount : '';
@@ -138,7 +138,6 @@ window.editTransaction = (id) => {
                                     oninput="this.value = this.value.toUpperCase()"
                                     placeholder="NOTA..."
                                     class="flex-1 p-3 bg-white rounded-xl text-[10px] font-bold outline-none border border-slate-200 uppercase">
-                                
                                 <input type="number" step="0.01" data-cat="${cat}" value="${montoValue}"
                                     class="edit-expense-input w-24 p-3 bg-white rounded-xl text-right font-black text-sm outline-none border border-slate-200">
                             </div>
@@ -149,12 +148,10 @@ window.editTransaction = (id) => {
         `;
     }
     modal.classList.remove('hidden');
+    // Forzar scroll arriba al abrir
+    modal.querySelector('div').scrollTop = 0;
 };
 
-// Cerrar modal
-window.closeEditModal = () => {
-    document.getElementById('modal-edit').classList.add('hidden');
-};
 // --- ELIMINAR TRANSACCIÓN ---
 window.deleteTransaction = async (id) => {
     // Confirmación de seguridad
@@ -175,22 +172,36 @@ window.deleteTransaction = async (id) => {
 };
 // Guardar los cambios en Firebase
 window.updateTransactionFirebase = async () => {
-    const id = document.getElementById('edit-id').value;
-    const unit = document.getElementById('edit-unit').value;
+    // 1. Usamos ?.value para que si el elemento no existe, devuelva undefined en lugar de romper el código
+    const id = document.getElementById('edit-id')?.value;
+    const unit = document.getElementById('edit-unit')?.value;
     const tOriginal = localTransactions.find(item => item.id === id);
     
-    if (!id || !tOriginal) return;
+    if (!id || !tOriginal) {
+        console.error("No se pudo encontrar el ID o la transacción original");
+        return;
+    }
 
-    let updateData = { unit: unit };
+    let updateData = { unit: unit || tOriginal.unit };
 
     if (tOriginal.type === 'income') {
-        const amt = document.getElementById('edit-amount-income').value;
-        const desc = document.getElementById('edit-description-income').value;
+        // Capturamos los elementos primero
+        const elAmt = document.getElementById('edit-amount-income');
+        const elCat = document.getElementById('edit-category-income');
+        const elDesc = document.getElementById('edit-description-income');
 
-        updateData.amount = parseFloat(amt) || 0;
-        updateData.category = document.getElementById('edit-category-income').value;
-        updateData.description = desc ? desc.trim().toUpperCase() : '';
+        // Validamos valores con fallbacks (si no existe el input, usa lo que ya tenía la transacción)
+        const amt = elAmt ? parseFloat(elAmt.value) : tOriginal.amount;
+        const cat = elCat ? elCat.value : tOriginal.category;
+        const desc = elDesc ? elDesc.value.trim() : "";
+
+        updateData.amount = amt || 0;
+        updateData.category = cat;
+        // Prioridad: Descripción manual -> Categoría -> Valor original
+        updateData.description = desc ? desc.toUpperCase() : (cat ? cat.toUpperCase() : tOriginal.description);
+        
     } else {
+        // Lógica de Gastos protegida
         const inputs = document.querySelectorAll('.edit-expense-input');
         let totalEncontrado = 0;
         let catEncontrada = '';
@@ -201,25 +212,30 @@ window.updateTransactionFirebase = async () => {
             if (val > 0) {
                 totalEncontrado = val;
                 catEncontrada = inp.dataset.cat;
-                // Buscamos la descripción que tiene el mismo data-edit-desc que la categoría encontrada
                 const inputDesc = document.querySelector(`[data-edit-desc="${catEncontrada}"]`);
                 descEncontrada = inputDesc ? inputDesc.value.trim().toUpperCase() : '';
             }
         });
         
-        updateData.amount = totalEncontrado;
-        updateData.category = catEncontrada || 'Sin Categoría';
-        updateData.description = descEncontrada || catEncontrada; // Si no hay nota, usa la categoría
+        // Si no se encontró ningún input con valor > 0, mantenemos los datos originales
+        updateData.amount = totalEncontrado || tOriginal.amount;
+        updateData.category = catEncontrada || tOriginal.category;
+        updateData.description = descEncontrada || updateData.category;
     }
 
     try {
+        // IMPORTANTE: Asegúrate que 'db' y 'USER_ID' estén accesibles
         const docRef = doc(db, 'usuarios', USER_ID, 'movimientos', id);
         await updateDoc(docRef, updateData);
+        
         closeEditModal();
-        if (typeof fetchTransactions === 'function') await fetchTransactions();
+        
+        if (typeof fetchTransactions === 'function') {
+            await fetchTransactions();
+        }
     } catch (e) {
-        console.error("Error:", e);
-        alert("Error al actualizar datos.");
+        console.error("Error al actualizar en Firebase:", e);
+        alert("Error al actualizar datos: " + e.message);
     }
 };
 
@@ -292,15 +308,28 @@ window.showView = (viewName) => {
     
     if (viewName === 'expense') {
         prepararVistaGastos();
-        fillUnitSelects(); // Asegúrate de llenar el select de unidades al entrar
+        // CORRECCIÓN: Agregamos la validación para que no dé error si no existe
+        if (typeof fillUnitSelects === 'function') {
+            fillUnitSelects();
+        } else {
+            console.warn("La función fillUnitSelects no está definida aún.");
+        }
     }
     
     if (viewName === 'income') {
-        fillUnitSelects(); // También aquí
+        // Esta parte ya la tenías bien protegida
+        if (typeof fillUnitSelects === 'function') fillUnitSelects();
+        
         const inAmount = document.getElementById('in-amount');
         if (inAmount) inAmount.value = '';
+        
+        const inUnit = document.getElementById('in-unit');
+        const inCat = document.getElementById('in-category');
+        if (inUnit) inUnit.selectedIndex = 0;
+        if (inCat) inCat.selectedIndex = 0;
     }
 };
+
 window.setReportSubView = (type) => {
     reportSubView = type;
     
