@@ -38,30 +38,42 @@ let catIngresos = []; // Valores por defecto
 
 // --- 1. ACCIONES DE FIREBASE ---
 window.saveIncome = async () => {
+    const elDesc = document.getElementById('in-description'); // Nuevo campo
     const elAmount = document.getElementById('in-amount');
     const elUnit = document.getElementById('in-unit');
-    const elCategory = document.getElementById('in-category'); // Nuevo select
+    const elCategory = document.getElementById('in-category');
 
-    if (!elAmount.value || !elUnit.value || !elCategory.value) return alert("Faltan datos");
+    // Validamos que la descripción también esté llena
+    if (!elDesc.value || !elAmount.value || !elUnit.value || !elCategory.value) {
+        return alert("⚠️ Faltan datos: Asegúrate de incluir una descripción.");
+    }
 
     try {
         await addDoc(collection(db, 'usuarios', USER_ID, 'movimientos'), {
             type: 'income',
+            // .toUpperCase() asegura que se guarde en mayúsculas aunque el HTML falle
+            description: elDesc.value.trim().toUpperCase(), 
             amount: parseFloat(elAmount.value),
-            category: elCategory.value, // Ahora guardamos la categoría seleccionada
+            category: elCategory.value,
             unit: elUnit.value,
+            // Agregamos la fecha actual para que funcionen tus reportes mensuales
+            date: new Date().toISOString().split('T')[0],
             createdAt: serverTimestamp()
         });
 
+        // --- Limpieza de campos tras el éxito ---
+        elDesc.value = '';
         elAmount.value = '';        
         elUnit.selectedIndex = 0;   
         elCategory.selectedIndex = 0;
 
+        // Refrescar y navegar
         if (typeof fetchTransactions === 'function') await fetchTransactions();
         showView('dashboard'); 
+        
     } catch (e) { 
-        console.error(e); 
-        alert("Error al guardar");
+        console.error("Error al guardar:", e); 
+        alert("❌ No se pudo guardar el ingreso");
     }
 };
 
@@ -77,24 +89,30 @@ window.editTransaction = (id) => {
 
     document.getElementById('edit-id').value = id;
 
-    // 1. Llenar Unidades
     unitSelect.innerHTML = unidadesConfig.map(u => 
         `<option value="${u}" ${u === t.unit ? 'selected' : ''}>${u}</option>`
     ).join('');
 
-    // 2. Lógica Diferenciada
     if (t.type === 'income') {
         title.innerText = "Editar Ingreso";
         title.className = "text-lg font-black text-green-600 uppercase italic";
         
         catContainer.innerHTML = `
             <div>
+                <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Descripción / Viaje</p>
+                <input type="text" id="edit-description-income" 
+                    value="${t.description || ''}" 
+                    oninput="this.value = this.value.toUpperCase()"
+                    class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none border-none focus:ring-2 focus:ring-green-500 uppercase" 
+                    placeholder="EJ: VIAJE A COPAN">
+            </div>
+            <div>
                 <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Monto Lps</p>
                 <input type="number" id="edit-amount-income" value="${t.amount}" 
                     class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none text-green-600 border-2 border-green-50">
             </div>
             <div>
-                <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Categoría de Ingreso</p>
+                <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Categoría</p>
                 <select id="edit-category-income" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none">
                     ${catIngresos.map(c => `<option value="${c}" ${c === t.category ? 'selected' : ''}>${c}</option>`).join('')}
                 </select>
@@ -105,23 +123,31 @@ window.editTransaction = (id) => {
         title.className = "text-lg font-black text-red-600 uppercase italic";
 
         catContainer.innerHTML = `
-            <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Desglose de Gastos</p>
-            <div class="grid grid-cols-1 gap-3 max-h-[40vh] overflow-y-auto pr-2">
+            <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1 text-center italic">Detalle de Gasto</p>
+            <div class="grid grid-cols-1 gap-3 max-h-[45vh] overflow-y-auto pr-2">
                 ${catEgresos.map(cat => {
-                    const montoActual = (t.category === cat) ? t.amount : '';
+                    const esMismaCat = (t.category === cat);
+                    const montoValue = esMismaCat ? t.amount : '';
+                    const descValue = esMismaCat ? (t.description || '') : '';
+
                     return `
-                        <div class="flex items-center gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                            <span class="flex-1 text-[10px] font-black uppercase text-slate-600 ml-2">${cat}</span>
-                            <input type="number" step="0.01" data-cat="${cat}" 
-                                class="edit-expense-input w-28 p-3 bg-white rounded-xl text-right font-black text-sm outline-none border border-slate-200 focus:ring-2 focus:ring-red-500" 
-                                placeholder="0.00" value="${montoActual}">
+                        <div class="bg-slate-50 p-3 rounded-2xl border ${esMismaCat ? 'border-red-200 bg-red-50/40' : 'border-slate-100'} space-y-2">
+                            <span class="text-[10px] font-black uppercase text-slate-500 ml-1">${cat}</span>
+                            <div class="flex gap-2">
+                                <input type="text" data-edit-desc="${cat}" value="${descValue}"
+                                    oninput="this.value = this.value.toUpperCase()"
+                                    placeholder="NOTA..."
+                                    class="flex-1 p-3 bg-white rounded-xl text-[10px] font-bold outline-none border border-slate-200 uppercase">
+                                
+                                <input type="number" step="0.01" data-cat="${cat}" value="${montoValue}"
+                                    class="edit-expense-input w-24 p-3 bg-white rounded-xl text-right font-black text-sm outline-none border border-slate-200">
+                            </div>
                         </div>
                     `;
                 }).join('')}
             </div>
         `;
     }
-
     modal.classList.remove('hidden');
 };
 
@@ -155,60 +181,45 @@ window.updateTransactionFirebase = async () => {
     
     if (!id || !tOriginal) return;
 
-    let updateData = { 
-        unit: unit,
-        // Añadimos la fecha actual por si quieres que el registro editado suba al inicio
-        // date: new Date().toISOString() 
-    };
+    let updateData = { unit: unit };
 
     if (tOriginal.type === 'income') {
         const amt = document.getElementById('edit-amount-income').value;
+        const desc = document.getElementById('edit-description-income').value;
+
         updateData.amount = parseFloat(amt) || 0;
         updateData.category = document.getElementById('edit-category-income').value;
+        updateData.description = desc ? desc.trim().toUpperCase() : '';
     } else {
         const inputs = document.querySelectorAll('.edit-expense-input');
         let totalEncontrado = 0;
         let catEncontrada = '';
+        let descEncontrada = '';
         
         inputs.forEach(inp => {
             const val = parseFloat(inp.value) || 0;
             if (val > 0) {
                 totalEncontrado = val;
                 catEncontrada = inp.dataset.cat;
+                // Buscamos la descripción que tiene el mismo data-edit-desc que la categoría encontrada
+                const inputDesc = document.querySelector(`[data-edit-desc="${catEncontrada}"]`);
+                descEncontrada = inputDesc ? inputDesc.value.trim().toUpperCase() : '';
             }
         });
         
         updateData.amount = totalEncontrado;
         updateData.category = catEncontrada || 'Sin Categoría';
+        updateData.description = descEncontrada || catEncontrada; // Si no hay nota, usa la categoría
     }
 
     try {
-        // 1. Referencia al documento (Asegúrate que 'db' y 'USER_ID' sean accesibles)
         const docRef = doc(db, 'usuarios', USER_ID, 'movimientos', id);
-        
-        // 2. Ejecutar actualización
         await updateDoc(docRef, updateData);
-        
-        // 3. Cerrar modal ANTES de alertar
         closeEditModal();
-        
-        // 4. Refrescar datos locales
-        if (typeof fetchTransactions === 'function') {
-            await fetchTransactions();
-        }
-
-        console.log("Actualización exitosa");
-        
+        if (typeof fetchTransactions === 'function') await fetchTransactions();
     } catch (e) {
-        // Si entra aquí pero el dato se guardó, es un error de promesa en la interfaz
-        console.error("Detalle del error:", e);
-        
-        // Solo mostramos alerta si realmente no hay conexión o falló Firebase
-        if (e.code !== 'undefined') {
-            alert("Nota: Se guardó, pero hubo un retraso en la conexión.");
-            closeEditModal();
-            fetchTransactions();
-        }
+        console.error("Error:", e);
+        alert("Error al actualizar datos.");
     }
 };
 
@@ -228,54 +239,68 @@ window.showView = (viewName) => {
         window.scrollTo(0, 0);
     }
 
-    // 3. ACTUALIZAR COLORES DE LA BARRA DE NAVEGACIÓN
+    // 3. ACTUALIZAR COLORES DE LA BARRA DE NAVEGACIÓN (Diseño Horizonte)
     const navButtons = {
         'dashboard': 'nav-home',
         'history': 'nav-reports',
         'settings': 'nav-settings'
     };
 
+    // Primero: Apagamos todos los botones (Gris Slate y opacidad baja)
     Object.values(navButtons).forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
-            const icon = btn.querySelector('svg');
-            const text = btn.querySelector('span');
-            if (icon) {
-                icon.classList.remove('text-blue-600');
-                icon.classList.add('text-slate-300');
+            btn.classList.add('opacity-40'); // Se ve "apagado"
+            const svg = btn.querySelector('svg');
+            const span = btn.querySelector('span');
+            
+            // Removemos cualquier color previo y ponemos gris
+            if (svg) {
+                svg.classList.remove('text-emerald-400', 'text-blue-600');
+                svg.classList.add('text-slate-300');
             }
-            if (text) {
-                text.classList.remove('text-blue-600');
-                text.classList.add('text-slate-300');
+            if (span) {
+                span.classList.remove('text-emerald-400', 'text-blue-600');
+                span.classList.add('text-slate-300');
             }
         }
     });
 
+    // Segundo: Encendemos el botón activo (Verde Esmeralda y opacidad total)
     const activeId = navButtons[viewName];
     if (activeId) {
         const activeBtn = document.getElementById(activeId);
+        activeBtn.classList.remove('opacity-40');
+        activeBtn.classList.add('opacity-100');
+        
         const icon = activeBtn.querySelector('svg');
         const text = activeBtn.querySelector('span');
-        if (icon) icon.classList.replace('text-slate-300', 'text-blue-600');
-        if (text) text.classList.replace('text-slate-300', 'text-blue-600');
+        
+        if (icon) {
+            icon.classList.remove('text-slate-300');
+            icon.classList.add('text-blue-600');
+        }
+        if (text) {
+            text.classList.remove('text-slate-300');
+            text.classList.add('text-blue-600');
+        }
     }
 
-    // --- 4. LÓGICA DE CARGA DE DATOS (CORREGIDA) ---
+    // --- 4. LÓGICA DE CARGA DE DATOS ---
     if (viewName === 'history') renderHistory();
     if (viewName === 'settings') renderSettings();
     
-    // Aquí cambiamos 'viewId' por 'viewName' y 'view-expense' por solo 'expense'
     if (viewName === 'expense') {
         prepararVistaGastos();
+        fillUnitSelects(); // Asegúrate de llenar el select de unidades al entrar
     }
     
-    // También es buena idea limpiar ingresos al entrar
     if (viewName === 'income') {
+        fillUnitSelects(); // También aquí
         const inAmount = document.getElementById('in-amount');
         if (inAmount) inAmount.value = '';
     }
 };
-
 window.setReportSubView = (type) => {
     reportSubView = type;
     
@@ -296,22 +321,21 @@ window.setReportSubView = (type) => {
 
 // --- 2. RENDERIZADO DEL DASHBOARD (INICIO) ---
 // --- RENDERIZADO DEL DASHBOARD ACTUALIZADO ---
-function renderDashboard() {
+window.renderDashboard = () => {
     const listaTransacciones = document.getElementById('lista-transacciones');
     const balanceTotal = document.getElementById('balance-total');
-    const dashIn = document.getElementById('dash-total-in');   // Nuevo elemento
-    const dashOut = document.getElementById('dash-total-out'); // Nuevo elemento
+    const dashIn = document.getElementById('dash-total-in');
+    const dashOut = document.getElementById('dash-total-out');
     
     if (!listaTransacciones) return;
 
-    let html = '';
     let totalGeneral = 0;
     let sumaIngresos = 0;
     let sumaGastos = 0;
 
-    // Procesamos todas las transacciones para los totales
+    // 1. Procesamos totales (Cálculos exactos)
     localTransactions.forEach((t) => {
-        const monto = parseFloat(t.amount);
+        const monto = parseFloat(t.amount) || 0;
         if (t.type === 'income') {
             sumaIngresos += monto;
             totalGeneral += monto;
@@ -321,26 +345,55 @@ function renderDashboard() {
         }
     });
 
-    // Dibujamos solo las últimas 10 para la lista de "Recientes"
-    localTransactions.slice(0, 10).forEach((t) => {
-        const monto = parseFloat(t.amount);
+    // 2. Ordenamos por fecha (más recientes primero) y tomamos 10
+    const recientes = [...localTransactions]
+        .sort((a, b) => {
+            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+            return dateB - dateA;
+        })
+        .slice(0, 10);
+
+    // 3. Generamos el HTML con el diseño "Premium"
+    let html = '';
+    recientes.forEach((t) => {
+        const isInc = t.type === 'income';
+        const monto = parseFloat(t.amount) || 0;
+        // Prioridad: Descripción (Nota) > Categoría
+        const mainText = t.description || t.category;
+        const subText = t.category;
+
         html += `
-            <div class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm border border-slate-100">
-                <div>
-                    <p class="text-xs font-bold text-slate-800 uppercase italic">${t.category}</p>
-                    <p class="text-[8px] text-slate-400 font-black">${t.unit}</p>
+            <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-1 mb-2 active:scale-[0.98] transition-transform">
+                <div class="flex flex-col min-w-0 flex-1 pr-3">
+                    <p class="text-[11px] font-black text-slate-800 uppercase italic truncate leading-none mb-1">
+                        ${mainText}
+                    </p>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1">
+                        <span class="${isInc ? 'text-emerald-500' : 'text-red-500'} font-black">${subText}</span> 
+                        <span class="text-slate-300">•</span> 
+                        <span class="text-blue-500 font-black">${t.unit || 'S/U'}</span>
+                    </p>
                 </div>
-                <p class="font-black text-sm ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
-                    ${t.type === 'income' ? '+' : '-'} L ${monto.toFixed(2)}
-                </p>
+
+                <div class="text-right">
+                    <p class="font-black text-sm ${isInc ? 'text-emerald-600' : 'text-red-600'} whitespace-nowrap leading-none">
+                        ${isInc ? '+' : '-'} L ${monto.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                    </p>
+                </div>
             </div>`;
     });
 
-    // Actualizamos la UI
-    listaTransacciones.innerHTML = html || '<p class="text-center text-slate-400 text-[10px] py-4">No hay movimientos recientes</p>';
-    if (balanceTotal) balanceTotal.innerText = `L ${totalGeneral.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    // 4. Actualizamos la Interfaz
+    listaTransacciones.innerHTML = html || `
+        <div class="text-center py-10">
+            <p class="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Sin movimientos recientes</p>
+        </div>`;
+
+    if (balanceTotal) {
+        balanceTotal.innerText = `L ${totalGeneral.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    }
     
-    // Actualizamos los nuevos cuadros de resumen
     if (dashIn) dashIn.innerText = `L ${sumaIngresos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     if (dashOut) dashOut.innerText = `L ${sumaGastos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
 }
@@ -351,7 +404,7 @@ function renderHistory() {
     const reportBalance = document.getElementById('report-balance-caja');
     if (!container) return;
 
-    // 1. Calcular Balance Total
+    // 1. Calcular Balance Total (Sigue igual)
     let balanceTotal = localTransactions.reduce((acc, t) => {
         const amt = parseFloat(t.amount) || 0;
         return acc + (t.type === 'income' ? amt : -amt);
@@ -361,7 +414,7 @@ function renderHistory() {
         reportBalance.innerText = `L ${balanceTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     }
 
-    // 2. Filtrar y Agrupar
+    // 2. Filtrar y Agrupar (Sigue igual)
     const filtered = localTransactions.filter(t => t.type === reportSubView);
     const groups = {};
 
@@ -380,63 +433,70 @@ function renderHistory() {
     const sortedYears = Object.keys(groups).sort((a, b) => b - a);
 
     sortedYears.forEach(year => {
-        // Separador de Año
         html += `
-            <div class="flex items-center gap-4 my-8">
+            <div class="flex items-center gap-4 my-8 px-2">
                 <div class="h-[1px] flex-1 bg-slate-200"></div>
-                <span class="text-3xl font-black text-slate-200 italic">${year}</span>
+                <span class="text-2xl font-black text-slate-300 italic tracking-tighter">${year}</span>
                 <div class="h-[1px] flex-1 bg-slate-200"></div>
             </div>`;
         
-        const sortedMonths = Object.keys(groups[year]); // Puedes ordenarlos si deseas
+        const sortedMonths = Object.keys(groups[year]);
 
         sortedMonths.forEach(month => {
             html += `
-                <h3 class="text-xs font-black uppercase text-slate-400 ml-2 border-l-4 border-blue-500 pl-3 italic mb-4 tracking-widest">
+                <h3 class="text-[10px] font-black uppercase text-slate-400 ml-4 border-l-4 border-blue-500 pl-3 italic mb-4 tracking-[0.2em]">
                     ${month}
                 </h3>
-                <div class="space-y-4 mb-8">`;
+                <div class="space-y-3 mb-10">`;
             
             groups[year][month].forEach(t => {
                 const isInc = t.type === 'income';
+                // Prioridad: Descripción (Nota) > Categoría
+                const mainText = t.description || t.category;
+                const subText = t.category;
+
                 html += `
-                    <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-50 flex justify-between items-center transition-hover hover:shadow-md mx-1">
-            <div class="flex flex-col min-w-0">
-                <p class="text-xs font-black text-slate-800 uppercase italic truncate">${t.category}</p>
-                <p class="text-[9px] font-bold text-slate-300 uppercase tracking-tight">
-                    ${t.unit || 'S/U'} • ${t.dateObj.toLocaleDateString('es-HN')}
-                </p>
-            </div>
+                <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-2 active:scale-[0.98] transition-transform">
+                    <div class="flex flex-col min-w-0 flex-1 pr-3">
+                        <p class="text-[11px] font-black text-slate-800 uppercase italic truncate leading-none mb-1">
+                            ${mainText}
+                        </p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1">
+                            <span class="${isInc ? 'text-green-500' : 'text-red-500'} font-black">${subText}</span> 
+                            <span class="text-slate-300">•</span> 
+                            <span class="text-blue-500">${t.unit || 'S/U'}</span>
+                        </p>
+                    </div>
 
-            <div class="flex items-center gap-3">
-                <p class="font-black text-base ${isInc ? 'text-green-600' : 'text-red-600'} whitespace-nowrap">
-                    L ${parseFloat(t.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}
-                </p>
-                
-                <div class="flex items-center gap-1 border-l border-slate-100 pl-2">
-                    <button onclick="editTransaction('${t.id}')" 
-                            class="p-1.5 rounded-lg transition-all active:scale-90 hover:bg-orange-50">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-orange-500">
-                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
-                        </svg>
-                    </button>
-
-                    <button onclick="deleteTransaction('${t.id}')" 
-                            class="p-1.5 rounded-lg transition-all active:scale-90 hover:bg-red-50">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-red-500">
-                            <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>`;
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <p class="font-black text-sm ${isInc ? 'text-green-600' : 'text-red-600'} whitespace-nowrap leading-none">
+                                L ${parseFloat(t.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}
+                            </p>
+                            <p class="text-[8px] font-bold text-slate-300 uppercase mt-1">${t.dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'})}</p>
+                        </div>
+                        
+                        <div class="flex flex-col gap-1 border-l border-slate-50 pl-2">
+                            <button onclick="editTransaction('${t.id}')" class="p-2 rounded-xl bg-slate-50 active:bg-orange-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-orange-500">
+                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                                </svg>
+                            </button>
+                            <button onclick="deleteTransaction('${t.id}')" class="p-2 rounded-xl bg-slate-50 active:bg-red-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-red-500">
+                                    <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
             });
-            html += `</div>`; // Cierra el div de space-y-4
+            html += `</div>`;
         });
     });
 
-    container.innerHTML = html || '<div class="text-center py-20"><p class="text-slate-400 font-bold">No hay registros en esta categoría</p></div>';
-   // Al final, reemplaza la llamada vieja por la nueva:
+    container.innerHTML = html || '<div class="text-center py-20"><p class="text-slate-400 font-bold uppercase text-[10px]">No hay registros</p></div>';
+
     if (typeof renderReportBreakdown === 'function') {
         renderReportBreakdown();
     }
@@ -622,7 +682,7 @@ window.renderReportBreakdown = () => {
     html += `
         <div class="mt-8 pt-6 border-t-2 border-dashed border-slate-200">
             <h4 class="text-[9px] font-black uppercase text-slate-400 mb-4 tracking-widest text-center italic">
-                Resumen Global ${isIncome ? 'Contratos' : 'Categorías'}
+                Resumen Global ${isIncome ? 'SERVICIOS' : 'Categorías'}
             </h4>
             <div class="space-y-4">
                 ${generarBarrasInternas(totalesGlobalesPorCat, totalGeneral, 'bg-blue-600', 'text-blue-600')}
@@ -641,11 +701,19 @@ function generarBarrasInternas(diccionarioCats, totalPadre, colorBarra, colorTex
             return `
                 <div class="space-y-1.5">
                     <div class="flex justify-between items-end">
-                        <span class="text-[10px] font-bold uppercase text-slate-600">${cat}</span>
-                        <span class="text-[10px] font-black ${colorTexto}">${porcentaje.toFixed(1)}%</span>
+                        <div class="flex flex-col">
+                            <span class="text-[9px] font-bold uppercase text-slate-500 leading-none">${cat}</span>
+                            <span class="text-[11px] font-black text-slate-800 tracking-tighter">
+                                L ${monto.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                            </span>
+                        </div>
+                        <span class="text-[10px] font-black ${colorTexto} bg-white px-2 py-0.5 rounded-md border border-slate-100 shadow-sm">
+                            ${porcentaje.toFixed(1)}%
+                        </span>
                     </div>
                     <div class="w-full h-2 bg-white rounded-full overflow-hidden border border-slate-100">
-                        <div class="h-full ${colorBarra} transition-all duration-1000" style="width: ${porcentaje}%"></div>
+                        <div class="h-full ${colorBarra} transition-all duration-1000 shadow-inner" 
+                             style="width: ${porcentaje}%"></div>
                     </div>
                 </div>
             `;
@@ -723,41 +791,64 @@ function prepararVistaGastos() {
     // 1. Limpiar todo
     container.innerHTML = '';
     
-    // 2. Crear un input por cada categoría de tu configuración
+    // 2. Crear las tarjetas de gasto (Nota + Monto)
     catEgresos.forEach(cat => {
         const div = document.createElement('div');
-        div.className = "flex items-center bg-slate-50 p-2 rounded-2xl border border-slate-100";
+        // Estilo de tarjeta para que no se vea amontonado en el iPhone
+        div.className = "bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2 mb-1";
+        
         div.innerHTML = `
-            <div class="flex-1 pl-2">
-                <p class="text-[10px] font-black uppercase text-slate-600">${cat}</p>
+            <div class="flex justify-between items-center px-1">
+                <p class="text-[10px] font-black uppercase text-slate-500">${cat}</p>
+                <span class="text-[9px] text-slate-300 italic font-bold tracking-tighter text-right">LEMPIRAS</span>
             </div>
-            <div class="w-32 relative">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">L</span>
-                <input type="number" 
-                       data-category="${cat}" 
-                       class="input-gasto-valor w-full bg-white p-3 pl-6 rounded-xl text-right font-black text-red-600 outline-none border-none focus:ring-1 focus:ring-red-500" 
-                       placeholder="0">
+            
+            <div class="flex gap-2">
+                <input type="text" 
+                    data-desc-cat="${cat}" 
+                    placeholder="NOTA O DETALLE..." 
+                    oninput="this.value = this.value.toUpperCase()"
+                    class="expense-desc-input flex-1 p-3 bg-white rounded-xl text-[10px] font-bold outline-none border border-slate-200 focus:ring-2 focus:ring-red-500 uppercase">
+                
+                <div class="w-32 relative">
+                    <input type="number" 
+                        step="0.01"
+                        data-cat="${cat}" 
+                        class="expense-input w-full bg-white p-3 rounded-xl text-right font-black text-red-600 outline-none border border-slate-200 focus:ring-2 focus:ring-red-500" 
+                        placeholder="0.00">
+                </div>
             </div>
         `;
         container.appendChild(div);
     });
 }
+
 // --- GUARDAR GASTO CORREGIDO ---
 window.saveMultipleExpenses = async () => {
     const unit = document.getElementById('ex-unit').value;
-    const inputs = document.querySelectorAll('.input-gasto-valor');
+    // Seleccionamos todos los inputs de monto
+    const inputs = document.querySelectorAll('.expense-input'); 
     
     if (!unit) return alert("Selecciona una unidad");
 
-    const batch = []; // Aquí guardaremos solo los que tienen monto
+    const batch = [];
 
     inputs.forEach(input => {
         const monto = parseFloat(input.value);
         if (monto > 0) {
+            const categoria = input.dataset.cat;
+            
+            // BUSCAMOS LA DESCRIPCIÓN ASOCIADA A ESTA CATEGORÍA
+            // Usamos el selector que apunta al data-desc-cat que creamos en el render
+            const inputDesc = document.querySelector(`[data-desc-cat="${categoria}"]`);
+            const nota = inputDesc ? inputDesc.value.trim().toUpperCase() : '';
+
             batch.push({
                 type: 'expense',
                 unit: unit,
-                category: input.dataset.category,
+                category: categoria,
+                // Si la nota está vacía, guardamos el nombre de la categoría por defecto
+                description: nota || categoria, 
                 amount: monto,
                 createdAt: serverTimestamp()
             });
@@ -772,8 +863,14 @@ window.saveMultipleExpenses = async () => {
             await addDoc(collection(db, 'usuarios', USER_ID, 'movimientos'), gasto);
         }
         
+        // Limpiamos los campos después de guardar con éxito
+        document.querySelectorAll('.expense-input, .expense-desc-input').forEach(i => i.value = '');
         
+        // Refrescamos y volvemos al inicio
+        if (typeof fetchTransactions === 'function') await fetchTransactions();
         showView('dashboard');
+        
+        console.log("Gastos guardados correctamente con sus descripciones");
     } catch (e) {
         alert("Error: " + e.message);
     }
