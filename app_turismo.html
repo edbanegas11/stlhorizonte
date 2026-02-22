@@ -5,210 +5,162 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  
     <title>STL HORIZONTE</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes slide-up {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slide-up 0.3s ease-out; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
 </head>
 <body class="bg-slate-50">
     
-<a href="index.html" 
-       class="fixed top-1 left-6 z-[100] bg-slate-800/90 backdrop-blur-md p-3 rounded-2xl shadow-2xl border border-slate-700 active:scale-90 transition-transform flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-        <span class="text-[10px] font-black text-white uppercase tracking-tighter">MENÚ</span>
-    </a>
-  
-  
-    <div id="app" class="max-w-md mx-auto pb-32">
-        <header class="bg-slate-900 text-white p-8 rounded-b-[3rem] shadow-xl">
-            <h1 class="font-black italic text-xl">SERVICIOS DE TURISMO "HORIZONTE"</h1>
-            <div class="text-center mt-4">
-                <p class="text-[10px] uppercase text-slate-500">Balance de Caja</p>
-                <h2 id="balance-total" class="text-4xl font-black">L 0.00</h2>
-            </div>
-        </header>
 
+    <div id="app" class="max-w-md mx-auto pb-32">
         <main id="main-content" class="px-6 mt-4 pb-40">
             
             <section id="view-dashboard" class="space-y-6">
-    <div class="grid grid-cols-2 gap-4">
-        <button onclick="showView('income')" class="bg-white p-6 rounded-[2rem] shadow-xl border-b-4 border-green-500 active:scale-95 transition-all flex flex-col items-center">
-            <span class="text-green-500 font-black">+ INGRESOS</span>
-        </button>
-        <button onclick="showView('expense')" class="bg-white p-6 rounded-[2rem] shadow-xl border-b-4 border-red-500 active:scale-95 transition-all flex flex-col items-center">
-            <span class="text-red-500 font-black">- GASTOS</span>
-        </button>
-    </div>
-
-    <div class="grid grid-cols-2 gap-4">
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-            <p class="text-[8px] font-black uppercase text-slate-400 tracking-widest">Total Ingresos</p>
-            <p id="dash-total-in" class="text-lg font-black text-green-600">L 0.00</p>
-        </div>
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-            <p class="text-[8px] font-black uppercase text-slate-400 tracking-widest">Total Gastos</p>
-            <p id="dash-total-out" class="text-lg font-black text-red-600">L 0.00</p>
-        </div>
-    </div>
-
-    <h3 class="text-[10px] font-black uppercase text-slate-400 mt-8 italic">Movimientos Recientes</h3>
-    <div id="lista-transacciones" class="space-y-2"></div>
-</section>
-
-            <section id="view-income" class="hidden bg-white p-8 rounded-[3rem] shadow-2xl space-y-6">
-    <h2 class="text-lg font-black text-green-600 uppercase italic">Nuevo Ingreso</h2>
-    <div class="space-y-4">
-        <input type="number" id="in-amount" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none" placeholder="Monto Lps">
+    <header class="bg-slate-900 text-white p-8 rounded-b-[3.5rem] shadow-2xl relative overflow-hidden -mx-6 -mt-4 mb-8">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-slate-800 rounded-full opacity-50"></div>
         
-        <select id="in-unit" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none">
-            </select>
+        <div class="relative z-10 flex justify-between items-center mb-6">
+            <a href="index.html" class="bg-white/10 backdrop-blur-md p-2.5 rounded-xl border border-white/10 active:scale-90 transition-transform flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span class="text-[9px] font-black text-white uppercase tracking-tighter">MENÚ</span>
+            </a>
 
-        <select id="in-category" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none">
-            </select>
-
-        <button onclick="saveIncome()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg">Confirmar</button>
-        <button onclick="showView('dashboard')" class="w-full text-slate-400 font-black text-[10px] uppercase">Cancelar</button>
-    </div>
-</section>
-
-            <section id="view-expense" class="hidden bg-white p-6 rounded-[3rem] shadow-2xl space-y-6">
-    <h2 class="text-lg font-black text-red-600 uppercase italic">Registro de Gastos</h2>
-    
-    <div class="space-y-4">
-        <label class="text-[10px] font-black uppercase text-slate-400 ml-2">Unidad / Vehículo</label>
-        <select id="ex-unit" class="w-full p-4 bg-slate-100 rounded-2xl font-bold text-sm outline-none border-none focus:ring-2 focus:ring-red-500">
-        </select>
-
-        <div id="container-categorias-dinamicas" class="grid grid-cols-1 gap-3 max-h-[40vh] overflow-y-auto pr-2 custom-scroll">
-            </div>
-
-        <div class="pt-4 space-y-3">
-            <button onclick="saveMultipleExpenses()" class="w-full bg-red-600 text-white py-4 rounded-3xl font-black uppercase shadow-lg active:scale-95 transition-transform">
-                Guardar Gastos
-            </button>
-            <button onclick="showView('dashboard')" class="w-full text-slate-400 font-black text-[10px] uppercase tracking-widest">
-                Cancelar
-            </button>
+            <h1 class="font-black italic text-[11px] uppercase tracking-widest text-slate-400">
+                STE Turismo <span class="text-white">Horizonte</span>
+            </h1>
         </div>
-    </div>
-</section>
+        
+        <div class="text-center relative z-10 py-4">
+            <p class="text-[10px] uppercase text-slate-500 font-bold tracking-[0.3em] mb-1">Caja Disponible</p>
+            <h2 id="balance-total" class="text-5xl font-black tracking-tighter text-emerald-400 drop-shadow-sm">
+                L 0.00
+            </h2>
+        </div>
+    </header>
 
-            <section id="view-history" class="hidden mt-8 space-y-6 pb-10">
-    <div class="flex justify-between items-end px-2">
-        <h2 class="text-2xl font-black italic uppercase tracking-tighter">Reporte Financiero</h2>
-        <button onclick="exportData()" class="flex items-center gap-2 bg-slate-200 text-slate-600 px-4 py-2 rounded-xl active:scale-95 shadow-sm">
-            <span class="text-[9px] font-black uppercase tracking-widest italic">Exportar</span>
-        </button>
-    </div>
-    
-    <div class="flex bg-slate-200 p-1 rounded-2xl mx-2">
-        <button id="btn-report-inc" onclick="setReportSubView('income')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white text-green-600 shadow-sm">Ingresos</button>
-        <button id="btn-report-exp" onclick="setReportSubView('expense')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-500">Gastos</button>
-    </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="showView('income')" class="bg-white p-6 rounded-[2.5rem] shadow-xl border-b-4 border-emerald-500 active:scale-95 transition-all flex flex-col items-center">
+                        <span class="text-emerald-500 font-black text-xs uppercase">+ Ingresos</span>
+                    </button>
+                    <button onclick="showView('expense')" class="bg-white p-6 rounded-[2.5rem] shadow-xl border-b-4 border-red-500 active:scale-95 transition-all flex flex-col items-center">
+                        <span class="text-red-500 font-black text-xs uppercase">- Gastos</span>
+                    </button>
+                </div>
 
-    <div id="report-breakdown-container" class="hidden bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 mx-2">
-    <div class="flex items-center gap-2 mb-4">
-        <span id="breakdown-icon" class="text-blue-500">⏱️</span>
-        <h3 id="breakdown-title" class="text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Distribución</h3>
-    </div>
-      
-    <div id="lista-breakdown" class="space-y-4"></div>
-</div>
-
-    <div id="historial-agrupado" class="space-y-8 px-2"></div>
-</section>
-
-            <section id="view-settings" class="hidden mt-8 space-y-6 pb-10">
-                <h2 class="text-2xl font-black italic uppercase tracking-tighter">Ajustes</h2>
-                
-                <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4">
-                    <h3 class="text-[10px] font-black uppercase text-slate-800 tracking-widest italic">Gestionar Unidades</h3>
-                    <div id="lista-unidades-ajustes" class="space-y-2 text-slate-600"></div>
-                    <div class="flex gap-2 mt-4">
-                        <input type="text" id="new-unit-input" class="flex-1 bg-slate-100 p-3 rounded-xl text-xs font-bold uppercase outline-none" placeholder="Nueva unidad...">
-                        <button onclick="addUnit()" class="bg-blue-600 text-white p-3 rounded-xl active:scale-90">+</button>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-[8px] font-black uppercase text-slate-400 tracking-widest">Total Ingresos</p>
+                        <p id="dash-total-in" class="text-lg font-black text-emerald-600">L 0.00</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                        <p class="text-[8px] font-black uppercase text-slate-400 tracking-widest">Total Gastos</p>
+                        <p id="dash-total-out" class="text-lg font-black text-red-600">L 0.00</p>
                     </div>
                 </div>
-<div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4">
-    <h3 class="text-[10px] font-black uppercase text-slate-800 tracking-widest italic">Categorías de Ingresos</h3>
-    <div id="lista-cat-ingresos-ajustes" class="space-y-2 text-slate-600"></div>
-    <div class="flex gap-2 mt-4">
-        <input type="text" id="new-cat-in-input" class="flex-1 bg-slate-100 p-3 rounded-xl text-xs font-bold uppercase outline-none" placeholder="Nueva categoría...">
-        <button onclick="addCatIngreso()" class="bg-blue-600 text-white p-3 rounded-xl active:scale-90">+</button>
-    </div>
-</div>
-                <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4">
-                    <h3 class="text-[10px] font-black uppercase text-slate-800 tracking-widest italic">Categorías de Gastos</h3>
-                    <div id="lista-categorias-ajustes" class="space-y-2 text-slate-600"></div>
-                    <div class="flex gap-2 mt-4">
-                        <input type="text" id="new-cat-input" class="flex-1 bg-slate-100 p-3 rounded-xl text-xs font-bold uppercase outline-none" placeholder="Nueva categoría...">
-                        <button onclick="addCategory()" class="bg-blue-600 text-white p-3 rounded-xl active:scale-90">+</button>
+
+                <h3 class="text-[10px] font-black uppercase text-slate-400 mt-8 italic tracking-widest text-center">Movimientos Recientes</h3>
+                <div id="lista-transacciones" class="space-y-3"></div>
+            </section>
+
+            <section id="view-income" class="hidden bg-white p-8 rounded-[3rem] shadow-2xl space-y-6">
+                <h2 class="text-lg font-black text-emerald-600 uppercase italic">Nuevo Ingreso</h2>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1">Descripción / Cliente</p>
+                        <input type="text" id="in-description" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none border-none focus:ring-2 focus:ring-emerald-500 uppercase" placeholder="EJ: GRUPO FAMILIAR COPAN" oninput="this.value = this.value.toUpperCase()">
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1">Monto Lps</p>
+                        <input type="number" id="in-amount" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none" placeholder="0.00">
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1">Unidad</p>
+                        <select id="in-unit" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none"></select>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1">Categoría</p>
+                        <select id="in-category" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none"></select>
+                    </div>
+                    <button onclick="saveIncome()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg active:scale-95 transition-all">Confirmar</button>
+                    <button onclick="showView('dashboard')" class="w-full text-slate-400 font-black text-[10px] uppercase">Cancelar</button>
+                </div>
+            </section>
+
+            <section id="view-expense" class="hidden bg-white p-6 rounded-[3rem] shadow-2xl space-y-6">
+                <h2 class="text-lg font-black text-red-600 uppercase italic">Registro de Gastos</h2>
+                <div class="space-y-4">
+                    <select id="ex-unit" class="w-full p-4 bg-slate-100 rounded-2xl font-bold text-sm outline-none border-none focus:ring-2 focus:ring-red-500"></select>
+                    <div id="container-categorias-dinamicas" class="grid grid-cols-1 gap-3 max-h-[45vh] overflow-y-auto pr-2 custom-scroll"></div>
+                    <div class="pt-4 space-y-3">
+                        <button onclick="saveMultipleExpenses()" class="w-full bg-red-600 text-white py-4 rounded-3xl font-black uppercase shadow-lg active:scale-95">Guardar Gastos</button>
+                        <button onclick="showView('dashboard')" class="w-full text-slate-400 font-black text-[10px] uppercase tracking-widest text-center block">Cancelar</button>
                     </div>
                 </div>
             </section>
 
-        </main>
-      
-<div id="modal-edit" class="hidden fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-    <div class="bg-white w-full max-w-md p-8 rounded-t-[3rem] shadow-2xl space-y-6 animate-slide-up overflow-y-auto max-h-[90vh]">
-        
-        <div class="flex justify-between items-center">
-            <h2 id="edit-title" class="text-lg font-black text-blue-600 uppercase italic">Editar Registro</h2>
-            <button onclick="closeEditModal()" class="text-slate-300 font-black text-[10px] uppercase">Cerrar</button>
-        </div>
-        
-        <div class="space-y-4">
-            <input type="hidden" id="edit-id">
-
-            <div>
-                <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Unidad / Vehículo</p>
-                <select id="edit-unit" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none border-none focus:ring-2 focus:ring-blue-500"></select>
-            </div>
-
-            <div id="edit-cat-container" class="space-y-4">
+            <section id="view-history" class="hidden mt-8 space-y-6 pb-10">
+                <div class="flex justify-between items-end px-2">
+                    <h2 class="text-2xl font-black italic uppercase tracking-tighter">Reporte <span class="text-emerald-500">Financiero</span></h2>
+                    <button onclick="exportData()" class="bg-slate-200 text-slate-600 px-4 py-2 rounded-xl active:scale-95 text-[9px] font-black uppercase italic">Exportar</button>
                 </div>
+                <div class="flex bg-slate-200 p-1 rounded-2xl">
+                    <button id="btn-report-inc" onclick="setReportSubView('income')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white text-emerald-600 shadow-sm">Ingresos</button>
+                    <button id="btn-report-exp" onclick="setReportSubView('expense')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-500">Gastos</button>
+                </div>
+                <div id="historial-agrupado" class="space-y-6"></div>
+            </section>
 
-            <button onclick="updateTransactionFirebase()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg active:scale-95 transition-all mt-4">
-                Guardar Cambios
+            <section id="view-settings" class="hidden mt-8 space-y-6 pb-10">
+                <h2 class="text-2xl font-black italic uppercase tracking-tighter text-slate-800">Ajustes</h2>
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4">
+                        <h3 class="text-[10px] font-black uppercase text-slate-800 tracking-widest italic">Gestionar Unidades</h3>
+                        <div id="lista-unidades-ajustes" class="space-y-2"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-unit-input" class="flex-1 bg-slate-100 p-3 rounded-xl text-xs font-bold uppercase outline-none" placeholder="Nueva unidad...">
+                            <button onclick="addUnit()" class="bg-slate-900 text-white px-4 rounded-xl font-black">+</button>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4">
+                        <h3 class="text-[10px] font-black uppercase text-slate-800 tracking-widest italic">Categorías Ingresos</h3>
+                        <div id="lista-cat-ingresos-ajustes" class="space-y-2"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-cat-in-input" class="flex-1 bg-slate-100 p-3 rounded-xl text-xs font-bold uppercase outline-none" placeholder="Nueva cat...">
+                            <button onclick="addCatIngreso()" class="bg-slate-900 text-white px-4 rounded-xl font-black">+</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="fixed bottom-6 left-4 right-4 bg-slate-900/95 backdrop-blur-xl border border-slate-700 p-4 flex justify-around items-center z-50 max-w-md mx-auto rounded-[2.5rem] shadow-2xl">
+            <button id="nav-home" onclick="showView('dashboard')" class="flex flex-col items-center gap-1">
+                <svg class="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span class="text-[9px] font-black uppercase tracking-widest text-emerald-400 italic">Inicio</span>
             </button>
-        </div>
-    </div>
-</div>
-
-<style>
-    @keyframes slide-up {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
-    }
-    .animate-slide-up { animation: slide-up 0.3s ease-out; }
-</style>
-        <nav class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 p-4 pb-8 flex justify-around items-center z-50 max-w-md mx-auto rounded-t-[3rem] shadow-[0_-20px_40px_-15px_rgba(0,0,0,0.1)]">
-    
-    <button id="nav-home" onclick="showView('dashboard')" class="flex flex-col items-center gap-1 group">
-        <div class="p-2 rounded-2xl">
-            <svg class="w-6 h-6 text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-        </div>
-        <span class="text-[10px] font-black uppercase tracking-widest text-blue-600 italic transition-colors">Inicio</span>
-    </button>
-
-    <button id="nav-reports" onclick="showView('history')" class="flex flex-col items-center gap-1 group">
-        <div class="p-2 rounded-2xl">
-            <svg class="w-6 h-6 text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-        </div>
-        <span class="text-[10px] font-black uppercase tracking-widest text-slate-300 italic transition-colors">Reportes</span>
-    </button>
-
-    <button id="nav-settings" onclick="showView('settings')" class="flex flex-col items-center gap-1 group">
-        <div class="p-2 rounded-2xl">
-            <svg class="w-6 h-6 text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-        </div>
-        <span class="text-[10px] font-black uppercase tracking-widest text-slate-300 italic transition-colors">Ajustes</span>
-    </button>
-</nav>
+            <button id="nav-reports" onclick="showView('history')" class="flex flex-col items-center gap-1 opacity-50">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span class="text-[9px] font-black uppercase tracking-widest text-white italic">Reportes</span>
+            </button>
+            <button id="nav-settings" onclick="showView('settings')" class="flex flex-col items-center gap-1 opacity-50">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                <span class="text-[9px] font-black uppercase tracking-widest text-white italic">Ajustes</span>
+            </button>
+        </nav>
     </div>
 
-    <script type="module" src="contratos.js"></script>
+    <script type="module" src="turismo.js"></script>
 </body>
 </html>
