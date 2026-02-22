@@ -28,24 +28,28 @@
             
             <section id="view-dashboard" class="space-y-6">
                 
-                <div class="relative overflow-hidden bg-indigo-950 rounded-[2.5rem] p-8 text-white shadow-2xl">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                    
-                    <div class="flex justify-between items-start relative z-10">
-                        <div>
-                            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300 mb-1">Operaciones</p>
-                            <h1 class="text-xl font-black tracking-tighter">STE ESTUDIANTES <span class="text-indigo-400 font-normal"></span></h1>
-                        </div>
-                        <a href="index.html" class="bg-white/10 p-2 rounded-xl backdrop-blur-md border border-white/10 active:scale-90 transition-transform">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        </a>
-                    </div>
+                <div class="relative overflow-hidden bg-indigo-950 rounded-[2.5rem] p-8 pt-[calc(env(safe-area-inset-top)+2rem)] text-white shadow-2xl">
+    
+    <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+    
+    <div class="flex justify-between items-start relative z-10">
+        <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300 mb-1">Operaciones</p>
+            <h1 class="text-xl font-black tracking-tighter">STE ESTUDIANTES <span class="text-indigo-400 font-normal"></span></h1>
+        </div>
+        <a href="index.html" class="bg-white/10 p-2 rounded-xl backdrop-blur-md border border-white/10 active:scale-90 transition-transform">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+        </a>
+    </div>
 
-                    <div class="mt-10 relative z-10 text-center">
-                        <p class="text-[9px] uppercase font-bold text-indigo-300/60 tracking-widest mb-2">Balance General Disponible</p>
-                        <h2 id="balance-total" class="text-5xl font-black tracking-tighter text-white drop-shadow-md">L 0.00</h2>
-                    </div>
-                </div>
+    <div class="mt-10 relative z-10 text-center">
+        <p class="text-[9px] uppercase font-bold text-indigo-300/60 tracking-widest mb-2">Balance General Disponible</p>
+        <h2 id="balance-total" class="text-5xl font-black tracking-tighter text-white drop-shadow-md">L 0.00</h2>
+    </div>
+</div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="showView('income')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-5 rounded-3xl shadow-lg shadow-emerald-200 active:scale-95 transition-all flex flex-col items-center gap-2 group">
@@ -87,14 +91,6 @@
             <section id="view-income" class="hidden bg-white p-8 rounded-[3rem] shadow-2xl space-y-6">
     <h2 class="text-lg font-black text-green-600 uppercase italic">Nuevo Ingreso</h2>
     <div class="space-y-4">
-        <div>
-            <p class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1">Descripción / Cliente</p>
-            <input type="text" id="in-description" 
-                class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none border-none focus:ring-2 focus:ring-green-500 uppercase" 
-                placeholder="EJ: VIAJE A COPAN - GRUPO FAMILIAR"
-                oninput="this.value = this.value.toUpperCase()">
-        </div>
-
         <p class="text-[9px] font-black uppercase text-slate-400 ml-2 mb-1">Monto Lps</p>
         <input type="number" id="in-amount" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none" placeholder="0.00">
         
