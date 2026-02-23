@@ -172,22 +172,26 @@
 </button>
     </div>
     
-    <div class="flex bg-slate-200 p-1 rounded-2xl mx-2">
-        <button id="btn-report-inc" onclick="setReportSubView('income')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white text-green-600 shadow-sm">Ingresos</button>
-        <button id="btn-report-exp" onclick="setReportSubView('expense')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-500">Gastos</button>
+    <div class="sticky top-0 z-40 bg-slate-50/80 backdrop-blur-lg pt-4 pb-2">
+    <div class="flex bg-slate-200 p-1 rounded-2xl mx-2 shadow-sm border border-slate-300/20">
+        <button id="btn-report-inc" onclick="setReportSubView('income')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white text-green-600 shadow-sm transition-all">
+            Ingresos
+        </button>
+        <button id="btn-report-exp" onclick="setReportSubView('expense')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-500 transition-all">
+            Gastos
+        </button>
     </div>
+</div>
 
-    <div id="report-breakdown-container" class="hidden bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 mx-2">
+<div id="report-breakdown-container" class="hidden bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 mx-2 mt-4">
     <div class="flex items-center gap-2 mb-4">
         <span id="breakdown-icon" class="text-blue-500">⏱️</span>
         <h3 id="breakdown-title" class="text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Distribución</h3>
     </div>
-      
     <div id="lista-breakdown" class="space-y-4"></div>
 </div>
 
-    <div id="historial-agrupado" class="space-y-8 px-2"></div>
-</section>
+<div id="historial-agrupado" class="space-y-8 px-2 mt-6"></div>
 
             <section id="view-settings" class="hidden mt-8 space-y-6 pb-10">
                 <h2 class="text-[20px] font-black italic uppercase tracking-[0.2em] text-indigo-500">Ajustes</h2>
