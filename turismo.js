@@ -30,30 +30,30 @@ window.saveIncome = async () => {
     const elAmount = document.getElementById('in-amount');
     const elUnit = document.getElementById('in-unit');
     const elCategory = document.getElementById('in-category');
-    // NUEVO: Capturar el elemento de descripción del HTML
     const elDesc = document.getElementById('in-description'); 
+    const elDate = document.getElementById('in-date'); // <--- CAPTURAR FECHA
 
-    if (!elAmount.value || !elUnit.value || !elCategory.value) {
-        return alert("⚠️ Faltan datos: Por favor llena todos los campos.");
+    if (!elAmount.value || !elUnit.value || !elCategory.value || !elDate.value) {
+        return alert("⚠️ Faltan datos: Por favor llena todos los campos, incluida la fecha.");
     }
 
     try {
         await addDoc(collection(db, 'usuarios', USER_ID, 'movimientos'), {
             type: 'income',
-            // NUEVO: Si hay descripción manual la usa, si no, usa la categoría
             description: elDesc && elDesc.value.trim() ? elDesc.value.trim().toUpperCase() : elCategory.value.trim().toUpperCase(), 
             amount: parseFloat(elAmount.value),
             category: elCategory.value,
             unit: elUnit.value,
-            date: new Date().toISOString().split('T')[0],
+            date: elDate.value, // <--- USA LA FECHA DEL INPUT (YYYY-MM-DD)
             createdAt: serverTimestamp()
         });
 
         // Limpieza
         elAmount.value = '';        
-        if(elDesc) elDesc.value = ''; // Limpiar descripción
+        if(elDesc) elDesc.value = ''; 
         elUnit.selectedIndex = 0;   
         elCategory.selectedIndex = 0;
+        // Opcional: No limpiar la fecha para facilitar ingresos múltiples del mismo día
 
         if (typeof fetchTransactions === 'function') await fetchTransactions();
         showView('dashboard'); 
@@ -89,63 +89,65 @@ window.editTransaction = (id) => {
         `<option value="${u}" ${u === t.unit ? 'selected' : ''}>${u}</option>`
     ).join('');
 
+    // --- BLOQUE DE FECHA (Común para ambos) ---
+    const dateHTML = `
+        <div class="mb-6">
+            <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Fecha del Movimiento</p>
+            <input type="date" id="edit-date" value="${t.date || ''}" 
+                class="w-full p-4 bg-blue-50/50 rounded-2xl font-bold text-sm outline-none border-2 border-blue-100 text-blue-600">
+        </div>
+    `;
+
     if (t.type === 'income') {
         title.innerText = "Editar Ingreso";
         title.className = "text-lg font-black text-green-600 uppercase italic";
         
-        catContainer.innerHTML = `
-            <div>
-                <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Monto Lps</p>
-                <input type="number" id="edit-amount-income" value="${t.amount}" 
-                    class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none text-green-600 border-2 border-green-50">
-            </div>
-            <div>
-                <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Descripción de Viaje</p>
-                <input type="text" id="edit-description-income" value="${t.description || ''}" 
-                    oninput="this.value = this.value.toUpperCase()"
-                    placeholder="EJ: VIAJE A SAN PEDRO SULA..."
-                    class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none border-2 border-slate-50 uppercase">
-            </div>
-            <div>
-                <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Categoría</p>
-                <select id="edit-category-income" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none">
-                    ${catIngresos.map(c => `<option value="${c}" ${c === t.category ? 'selected' : ''}>${c}</option>`).join('')}
-                </select>
+        catContainer.innerHTML = dateHTML + `
+            <div class="space-y-4">
+                <div>
+                    <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Monto Lps</p>
+                    <input type="number" id="edit-amount-income" value="${t.amount}" 
+                        class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none text-green-600 border-2 border-green-50">
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Descripción de Viaje</p>
+                    <input type="text" id="edit-description-income" value="${t.description || ''}" 
+                        oninput="this.value = this.value.toUpperCase()"
+                        class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none border-2 border-slate-50 uppercase">
+                </div>
+                <div>
+                    <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Categoría</p>
+                    <select id="edit-category-income" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none">
+                        ${catIngresos.map(c => `<option value="${c}" ${c === t.category ? 'selected' : ''}>${c}</option>`).join('')}
+                    </select>
+                </div>
             </div>
         `;
     } else {
-        // ... (Tu código de Gastos está excelente, mantén el scroll-y para el iPhone)
         title.innerText = "Editar Gasto";
         title.className = "text-lg font-black text-red-600 uppercase italic";
 
-        catContainer.innerHTML = `
+        catContainer.innerHTML = dateHTML + `
             <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1 text-center italic">Detalle de Gasto</p>
             <div class="grid grid-cols-1 gap-3 max-h-[40vh] overflow-y-auto pr-2 custom-scroll">
                 ${catEgresos.map(cat => {
                     const esMismaCat = (t.category === cat);
-                    const montoValue = esMismaCat ? t.amount : '';
-                    const descValue = esMismaCat ? (t.description || '') : '';
-
                     return `
                         <div class="bg-slate-50 p-3 rounded-2xl border ${esMismaCat ? 'border-red-200 bg-red-50/40' : 'border-slate-100'} space-y-2">
                             <span class="text-[10px] font-black uppercase text-slate-500 ml-1">${cat}</span>
                             <div class="flex gap-2">
-                                <input type="text" data-edit-desc="${cat}" value="${descValue}"
+                                <input type="text" data-edit-desc="${cat}" value="${esMismaCat ? (t.description || '') : ''}"
                                     oninput="this.value = this.value.toUpperCase()"
-                                    placeholder="NOTA..."
                                     class="flex-1 p-3 bg-white rounded-xl text-[10px] font-bold outline-none border border-slate-200 uppercase">
-                                <input type="number" step="0.01" data-cat="${cat}" value="${montoValue}"
+                                <input type="number" step="0.01" data-cat="${cat}" value="${esMismaCat ? t.amount : ''}"
                                     class="edit-expense-input w-24 p-3 bg-white rounded-xl text-right font-black text-sm outline-none border border-slate-200">
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 }).join('')}
             </div>
         `;
     }
     modal.classList.remove('hidden');
-    // Forzar scroll arriba al abrir
-    modal.querySelector('div').scrollTop = 0;
 };
 
 // --- ELIMINAR TRANSACCIÓN ---
@@ -169,35 +171,32 @@ window.deleteTransaction = async (id) => {
 
 // Guardar los cambios en Firebase
 window.updateTransactionFirebase = async () => {
-    // 1. Usamos ?.value para que si el elemento no existe, devuelva undefined en lugar de romper el código
     const id = document.getElementById('edit-id')?.value;
     const unit = document.getElementById('edit-unit')?.value;
+    const newDate = document.getElementById('edit-date')?.value; // <--- CAPTURAMOS LA FECHA EDITADA
     const tOriginal = localTransactions.find(item => item.id === id);
     
-    if (!id || !tOriginal) {
-        console.error("No se pudo encontrar el ID o la transacción original");
-        return;
-    }
+    if (!id || !tOriginal) return;
 
-    let updateData = { unit: unit || tOriginal.unit };
+    let updateData = { 
+        unit: unit || tOriginal.unit,
+        date: newDate || tOriginal.date // <--- ACTUALIZAMOS LA FECHA
+    };
 
     if (tOriginal.type === 'income') {
-    const elAmt = document.getElementById('edit-amount-income');
-    const elCat = document.getElementById('edit-category-income');
-    // NUEVO: Apuntar al ID correcto que creamos arriba
-    const elDesc = document.getElementById('edit-description-income');
+        const elAmt = document.getElementById('edit-amount-income');
+        const elCat = document.getElementById('edit-category-income');
+        const elDesc = document.getElementById('edit-description-income');
 
-    const amt = elAmt ? parseFloat(elAmt.value) : tOriginal.amount;
-    const cat = elCat ? elCat.value : tOriginal.category;
-    const desc = elDesc ? elDesc.value.trim() : "";
+        const amt = elAmt ? parseFloat(elAmt.value) : tOriginal.amount;
+        const cat = elCat ? elCat.value : tOriginal.category;
+        const desc = elDesc ? elDesc.value.trim() : "";
 
-    updateData.amount = amt || 0;
-    updateData.category = cat;
-    // NUEVA PRIORIDAD: Si el usuario escribió algo, eso manda. Si no, usa la categoría.
-    updateData.description = desc ? desc.toUpperCase() : (cat ? cat.toUpperCase() : tOriginal.description);
+        updateData.amount = amt || 0;
+        updateData.category = cat;
+        updateData.description = desc ? desc.toUpperCase() : (cat ? cat.toUpperCase() : tOriginal.description);
         
     } else {
-        // Lógica de Gastos protegida
         const inputs = document.querySelectorAll('.edit-expense-input');
         let totalEncontrado = 0;
         let catEncontrada = '';
@@ -213,28 +212,23 @@ window.updateTransactionFirebase = async () => {
             }
         });
         
-        // Si no se encontró ningún input con valor > 0, mantenemos los datos originales
         updateData.amount = totalEncontrado || tOriginal.amount;
         updateData.category = catEncontrada || tOriginal.category;
-        updateData.description = descEncontrada || updateData.category;
+        updateData.description = descEncontrada || (catEncontrada || tOriginal.description);
     }
 
     try {
-        // IMPORTANTE: Asegúrate que 'db' y 'USER_ID' estén accesibles
         const docRef = doc(db, 'usuarios', USER_ID, 'movimientos', id);
         await updateDoc(docRef, updateData);
         
         closeEditModal();
+        if (typeof fetchTransactions === 'function') await fetchTransactions();
         
-        if (typeof fetchTransactions === 'function') {
-            await fetchTransactions();
-        }
     } catch (e) {
-        console.error("Error al actualizar en Firebase:", e);
-        alert("Error al actualizar datos: " + e.message);
+        console.error("Error al actualizar:", e);
+        alert("Error: " + e.message);
     }
 };
-
 // --- 1. NAVEGACIÓN ENTRE VISTAS ---
 window.showView = (viewName) => {
     // 1. Ocultar todas las secciones
@@ -257,6 +251,11 @@ window.showView = (viewName) => {
         'history': 'nav-reports',
         'settings': 'nav-settings'
     };
+  
+  // Dentro de window.showView para 'income' o 'expense'
+const hoy = new Date().toISOString().split('T')[0];
+if (document.getElementById('in-date')) document.getElementById('in-date').value = hoy;
+if (document.getElementById('ex-date')) document.getElementById('ex-date').value = hoy;
 
     // Primero: Apagamos todos los botones (Gris Slate y opacidad baja)
     Object.values(navButtons).forEach(id => {
@@ -370,12 +369,21 @@ window.renderDashboard = () => {
         }
     });
 
-    // 2. Ordenamos por fecha (más recientes primero) y tomamos 10
+    // 2. Ordenamos por FECHA DE VIAJE (t.date) y tomamos los 10 más actuales
     const recientes = [...localTransactions]
         .sort((a, b) => {
-            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
-            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
-            return dateB - dateA;
+            // Convertimos t.date (YYYY-MM-DD) a milisegundos para comparar
+            const dateA = new Date((a.date || "2000-01-01") + 'T00:00:00').getTime();
+            const dateB = new Date((b.date || "2000-01-01") + 'T00:00:00').getTime();
+
+            if (dateB !== dateA) {
+                return dateB - dateA; // Ordenar por fecha de viaje (más nueva a más vieja)
+            }
+            
+            // Si la fecha de viaje es la misma, usamos createdAt (fecha de creación) como desempate
+            const createA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+            const createB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+            return createB - createA;
         })
         .slice(0, 10);
 
@@ -384,9 +392,12 @@ window.renderDashboard = () => {
     recientes.forEach((t) => {
         const isInc = t.type === 'income';
         const monto = parseFloat(t.amount) || 0;
-        // Prioridad: Descripción (Nota) > Categoría
         const mainText = t.description || t.category;
         const subText = t.category;
+
+        // Formatear la fecha corta para mostrarla en el inicio (ej: 23/02)
+        const dateObj = new Date((t.date || "") + 'T00:00:00');
+        const displayDate = t.date ? dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'}) : 'S/F';
 
         html += `
             <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-1 mb-2 active:scale-[0.98] transition-transform">
@@ -397,7 +408,9 @@ window.renderDashboard = () => {
                     <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1">
                         <span class="${isInc ? 'text-emerald-500' : 'text-red-500'} font-black">${subText}</span> 
                         <span class="text-slate-300">•</span> 
-                        <span class="text-blue-500 font-black">${t.unit || 'S/U'}</span>
+                        <span class="text-blue-500 font-black">${displayDate}</span>
+                        <span class="text-slate-300">•</span> 
+                        <span class="text-slate-500">${t.unit || 'S/U'}</span>
                     </p>
                 </div>
 
@@ -422,14 +435,13 @@ window.renderDashboard = () => {
     if (dashIn) dashIn.innerText = `L ${sumaIngresos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     if (dashOut) dashOut.innerText = `L ${sumaGastos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
 }
-
 // --- 3. RENDERIZADO DE HISTORIAL AGRUPADO ---
 function renderHistory() {
     const container = document.getElementById('historial-agrupado');
     const reportBalance = document.getElementById('report-balance-caja');
     if (!container) return;
 
-    // 1. Calcular Balance Total (Sigue igual)
+    // 1. Balance Total (Se mantiene igual)
     let balanceTotal = localTransactions.reduce((acc, t) => {
         const amt = parseFloat(t.amount) || 0;
         return acc + (t.type === 'income' ? amt : -amt);
@@ -439,22 +451,31 @@ function renderHistory() {
         reportBalance.innerText = `L ${balanceTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     }
 
-    // 2. Filtrar y Agrupar (Sigue igual)
+    // 2. Filtrar y Agrupar por FECHA DE VIAJE (t.date)
     const filtered = localTransactions.filter(t => t.type === reportSubView);
     const groups = {};
 
     filtered.forEach(t => {
-        const date = t.createdAt?.toDate ? t.createdAt.toDate() : new Date();
-        const year = date.getFullYear();
-        const month = date.toLocaleString('es-HN', { month: 'long' }).toUpperCase();
+        // CORRECCIÓN: Usar t.date del input. Si no existe, usamos la fecha de hoy como respaldo.
+        // Agregamos T00:00:00 para evitar que la zona horaria reste un día al convertir.
+        const dateStr = t.date || new Date().toISOString().split('T')[0];
+        const dateObj = new Date(dateStr + 'T00:00:00');
+        
+        const year = dateObj.getFullYear();
+        // Obtenemos el mes en texto
+        const month = dateObj.toLocaleString('es-HN', { month: 'long' }).toUpperCase();
         
         if (!groups[year]) groups[year] = {};
         if (!groups[year][month]) groups[year][month] = [];
-        groups[year][month].push({...t, dateObj: date});
+        
+        // Guardamos el objeto con una propiedad extra para ordenar después
+        groups[year][month].push({...t, dateObj: dateObj});
     });
 
-    // 3. Generar HTML
+    // 3. Generar HTML con orden DESCENDENTE (Actual a Viejo)
     let html = '';
+    
+    // Ordenar Años: de Mayor a Menor
     const sortedYears = Object.keys(groups).sort((a, b) => b - a);
 
     sortedYears.forEach(year => {
@@ -465,7 +486,12 @@ function renderHistory() {
                 <div class="h-[1px] flex-1 bg-slate-200"></div>
             </div>`;
         
-        const sortedMonths = Object.keys(groups[year]);
+        // Ordenar Meses: Necesitamos un mapa para saber que DICIEMBRE va antes que ENERO
+        const mesesNombres = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+        
+        const sortedMonths = Object.keys(groups[year]).sort((a, b) => {
+            return mesesNombres.indexOf(b) - mesesNombres.indexOf(a);
+        });
 
         sortedMonths.forEach(month => {
             html += `
@@ -474,11 +500,10 @@ function renderHistory() {
                 </h3>
                 <div class="space-y-3 mb-10">`;
             
-            groups[year][month].forEach(t => {
+            // Ordenar transacciones dentro del mes: de día más reciente a más viejo
+            groups[year][month].sort((a, b) => b.dateObj - a.dateObj).forEach(t => {
                 const isInc = t.type === 'income';
-                // Prioridad: Descripción (Nota) > Categoría
                 const mainText = t.description || t.category;
-                const subText = t.category;
 
                 html += `
                 <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-2 active:scale-[0.98] transition-transform">
@@ -487,7 +512,7 @@ function renderHistory() {
                             ${mainText}
                         </p>
                         <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1">
-                            <span class="${isInc ? 'text-green-500' : 'text-red-500'} font-black">${subText}</span> 
+                            <span class="${isInc ? 'text-green-500' : 'text-red-500'} font-black">${t.category}</span> 
                             <span class="text-slate-300">•</span> 
                             <span class="text-blue-500">${t.unit || 'S/U'}</span>
                         </p>
@@ -498,7 +523,9 @@ function renderHistory() {
                             <p class="font-black text-sm ${isInc ? 'text-green-600' : 'text-red-600'} whitespace-nowrap leading-none">
                                 L ${parseFloat(t.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}
                             </p>
-                            <p class="text-[8px] font-bold text-slate-300 uppercase mt-1">${t.dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'})}</p>
+                            <p class="text-[8px] font-bold text-slate-400 uppercase mt-1">
+                                ${t.dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'})}
+                            </p>
                         </div>
                         
                         <div class="flex flex-col gap-1 border-l border-slate-50 pl-2">
@@ -852,10 +879,11 @@ function prepararVistaGastos() {
 // --- GUARDAR GASTO CORREGIDO ---
 window.saveMultipleExpenses = async () => {
     const unit = document.getElementById('ex-unit').value;
-    // Seleccionamos todos los inputs de monto
+    const date = document.getElementById('ex-date').value; // <--- CAPTURAR FECHA
     const inputs = document.querySelectorAll('.expense-input'); 
     
     if (!unit) return alert("Selecciona una unidad");
+    if (!date) return alert("Selecciona la fecha del gasto"); // <--- VALIDACIÓN
 
     const batch = [];
 
@@ -863,9 +891,6 @@ window.saveMultipleExpenses = async () => {
         const monto = parseFloat(input.value);
         if (monto > 0) {
             const categoria = input.dataset.cat;
-            
-            // BUSCAMOS LA DESCRIPCIÓN ASOCIADA A ESTA CATEGORÍA
-            // Usamos el selector que apunta al data-desc-cat que creamos en el render
             const inputDesc = document.querySelector(`[data-desc-cat="${categoria}"]`);
             const nota = inputDesc ? inputDesc.value.trim().toUpperCase() : '';
 
@@ -873,9 +898,9 @@ window.saveMultipleExpenses = async () => {
                 type: 'expense',
                 unit: unit,
                 category: categoria,
-                // Si la nota está vacía, guardamos el nombre de la categoría por defecto
                 description: nota || categoria, 
                 amount: monto,
+                date: date, // <--- ASIGNAR LA FECHA SELECCIONADA
                 createdAt: serverTimestamp()
             });
         }
@@ -889,18 +914,17 @@ window.saveMultipleExpenses = async () => {
             await addDoc(collection(db, 'usuarios', USER_ID, 'movimientos'), gasto);
         }
         
-        // Limpiamos los campos después de guardar con éxito
+        // Limpiamos los campos después de guardar
         document.querySelectorAll('.expense-input, .expense-desc-input').forEach(i => i.value = '');
         
-        // Refrescamos y volvemos al inicio
         if (typeof fetchTransactions === 'function') await fetchTransactions();
         showView('dashboard');
         
-        console.log("Gastos guardados correctamente con sus descripciones");
     } catch (e) {
         alert("Error: " + e.message);
     }
 };
+
 // --- 6. FUNCIONES DE APOYO ---
 window.setReportSubView = (type) => {
     reportSubView = type;
@@ -919,19 +943,50 @@ window.setReportSubView = (type) => {
     renderHistory();
 };
 
-window.exportData = () => {
-    if (localTransactions.length === 0) return alert("No hay datos");
-    let csv = "Fecha,Tipo,Categoria,Unidad,Monto\n";
-    localTransactions.forEach(t => {
-        const fecha = t.createdAt?.toDate ? t.createdAt.toDate().toLocaleDateString() : '';
-        csv += `${fecha},${t.type},${t.category},${t.unit},${t.amount}\n`;
+window.exportToExcel = () => {
+    if (!localTransactions || localTransactions.length === 0) return alert("No hay datos");
+
+    const inputUsuario = prompt("Exportar Mes/Año (ej: MARZO 2026) o deja vacío para TODO:");
+    const filtro = inputUsuario ? inputUsuario.toUpperCase().trim() : null;
+
+    // Encabezados optimizados para Tabla Dinámica
+    // GRUPO servirá para separar Ingresos de Gastos y sumarlos por aparte
+    const headers = ["FECHA", "MES", "AÑO", "UNIDAD", "GRUPO", "CATEGORIA", "DESCRIPCION", "MONTO"];
+    
+    const filteredData = localTransactions.filter(t => {
+        if (!filtro) return true;
+        const dateObj = new Date((t.date || "2000-01-01") + 'T00:00:00');
+        const mesT = dateObj.toLocaleString('es-HN', { month: 'long' }).toUpperCase();
+        const añoT = dateObj.getFullYear().toString();
+        return mesT.includes(filtro) || añoT.includes(filtro) || `${mesT} ${añoT}`.includes(filtro);
     });
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'reporte.csv';
-    a.click();
+
+    const rows = filteredData.map(t => {
+        const dateObj = new Date((t.date || "2000-01-01") + 'T00:00:00');
+        const monto = parseFloat(t.amount) || 0;
+        
+        return [
+            t.date,
+            dateObj.toLocaleString('es-HN', { month: 'long' }).toUpperCase(),
+            dateObj.getFullYear(),
+            t.unit || 'S/U',
+            t.type === 'income' ? '1-INGRESOS' : '2-GASTOS', // El número ayuda a ordenar en Excel
+            t.category,
+            (t.description || '').replace(/;/g, ','),
+            t.type === 'income' ? monto : -monto // IMPORTANTE: Negativo para gastos
+        ];
+    });
+
+    let csvContent = "\uFEFF";
+    csvContent += headers.join(";") + "\n";
+    rows.forEach(row => csvContent += row.join(";") + "\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Contabilidad_${filtro || 'General'}.csv`);
+    link.click();
 };
 
 // --- 7. LISTENERS TIEMPO REAL ---
