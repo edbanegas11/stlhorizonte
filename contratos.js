@@ -272,18 +272,24 @@ if (document.getElementById('ex-date')) document.getElementById('ex-date').value
     Object.values(navButtons).forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
-            btn.classList.add('opacity-40'); // Se ve "apagado"
+            // Quitamos opacidad total y ponemos opacidad baja
+            btn.classList.remove('opacity-100');
+            btn.classList.add('opacity-40');
+            
             const svg = btn.querySelector('svg');
             const span = btn.querySelector('span');
-            
-            // Removemos cualquier color previo y ponemos gris
+
             if (svg) {
-                svg.classList.remove('text-emerald-400', 'text-blue-600');
-                svg.classList.add('text-slate-300');
+                // Quitamos el color naranja y el brillo de todos
+                svg.classList.remove('text-amber-400');
+                svg.classList.add('text-slate-400');
+                svg.style.color = ''; // Borra el naranja manual
+                svg.style.filter = 'none'; // Borra el brillo manual
             }
             if (span) {
-                span.classList.remove('text-emerald-400', 'text-blue-600');
-                span.classList.add('text-slate-300');
+                span.classList.remove('text-amber-400');
+                span.classList.add('text-slate-400');
+                span.style.color = ''; // Borra el naranja manual
             }
         }
     });
@@ -299,12 +305,16 @@ if (document.getElementById('ex-date')) document.getElementById('ex-date').value
         const text = activeBtn.querySelector('span');
         
         if (icon) {
-            icon.classList.remove('text-slate-300');
-            icon.classList.add('text-blue-600');
+            icon.classList.remove('text-slate-400');
+            icon.classList.add('text-amber-400');
+            // Aplicamos el color naranja directamente por si Tailwind tiene conflictos
+            icon.style.color = '#fbbf24'; 
+            icon.style.filter = 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.5))';
         }
         if (text) {
-            text.classList.remove('text-slate-300');
-            text.classList.add('text-blue-600');
+            text.classList.remove('text-slate-400');
+            text.classList.add('text-amber-400');
+            text.style.color = '#fbbf24';
         }
     }
 
