@@ -18,47 +18,41 @@
         .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         section { animation: fadeIn 0.4s ease-out forwards; }
-    </style>
+     </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-50">
     
-    <div id="app" class="max-w-md mx-auto min-h-screen relative pb-32">
+
+   <div id="app" class="max-w-md mx-auto min-h-screen relative pb-32">
         
-       <main id="main-content" class="px-5 pt-6">
+        <main id="main-content" class="px-5 pt-6">
             
             <section id="view-dashboard" class="space-y-6">
                 
-    <div class="mt-5 relative overflow-hidden bg-[#08121e] rounded-[2.5rem] p-8 pt-[calc(env(safe-area-inset-top)+2rem)] text-white shadow-2xl">
+   <header class="mt-4 relative overflow-hidden bg-[#08121e] rounded-[2rem] p-5 pt-[calc(env(safe-area-inset-top)+1.5rem)] text-white shadow-2xl">
+    <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/20 rounded-full -mr-12 -mt-12 blur-2xl"></div>
     
-        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-    
-        <div class="flex justify-between items-start relative z-10">
-        <div>
-                <div class="flex items-baseline gap-3">
-                    <p class="text-[13px] font-black uppercase tracking-[0.2em] text-amber-400">
-                        Operaciones
-                    </p>
-                    <h1>
-                        <p class="text-[13px] font-black uppercase tracking-[0.2em] text-slate-200">
-                            STE ESTUDIANTES
-                        </p>
-                    </h1>
-                </div>
-            </div>
-            <a href="index.html" class="transform -translate-y-2 bg-slate-800/50 p-2 rounded-xl border border-amber-500/20 active:scale-90 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                    <polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-            </a>
+    <div class="flex justify-between items-center relative z-10">
+        <div class="flex items-baseline gap-2">
+            <p class="text-[17px] font-black uppercase tracking-wider text-slate-200">
+                    Operaciones
+                </p>
+            <h1 class="text-[17px] font-black uppercase tracking-wider text-amber-400">
+                    STE ESTUDIANTES
+                </h1>
         </div>
-
-        <div class="mt-1 relative z-10 text-center">
-            <p class="text-[9px] uppercase font-bold text-slate-400 tracking-widest mb-2">Balance General Disponible</p>
-            <h2 id="balance-total" class="text-5xl font-black tracking-tighter text-white drop-shadow-md">L 0.00</h2>
-        </div>
+        
+        <button onclick="showView('dashboard')" class="bg-white/10 p-1.5 rounded-lg active:scale-90 transition-transform">
+           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"> <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/> <polyline points="9 22 9 12 15 12 15 22"/> </svg> </a>
+        </button>
     </div>
- </header>
+
+    <div class="mt-3 relative z-10 text-center">
+        <p class="text-[9px] uppercase font-bold text-slate-200 tracking-[0.2em] mb-0.5">Balance General</p>
+        <h2 id="balance-total" class="text-3xl font-black tracking-tighter text-amber-400">L 0.00</h2>
+    </div>
+</header>
+         
  <div class="grid grid-cols-2 gap-4">
                     <button onclick="showView('income')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-5 rounded-3xl shadow-lg shadow-emerald-200 active:scale-95 transition-all flex flex-col items-center gap-2 group">
                         <div class="bg-white/20 p-2 rounded-xl group-hover:rotate-12 transition-transform">
@@ -67,11 +61,11 @@
                         <span class="text-[11px] font-black uppercase tracking-wider">Ingreso</span>
                     </button>
                     
-                    <button onclick="showView('expense')" class="bg-white text-slate-900 p-5 rounded-3xl shadow-xl border border-slate-100 active:scale-95 transition-all flex flex-col items-center gap-2 group">
-                        <div class="bg-rose-100 text-rose-600 p-2 rounded-xl group-hover:-rotate-12 transition-transform">
+                    <button onclick="showView('expense')" class="bg-rose-400 text-slate-900 p-5 rounded-3xl shadow-xl border border-slate-100 active:scale-95 transition-all flex flex-col items-center gap-2 group">
+                        <div class="bg-rose-600 text-white p-2 rounded-xl group-hover:-rotate-12 transition-transform">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
                         </div>
-                        <span class="text-[11px] font-black uppercase tracking-wider text-slate-700">Gasto</span>
+                        <span class="text-[11px] font-black uppercase tracking-wider text-white">Gasto</span>
                     </button>
                 </div>
 
@@ -166,37 +160,69 @@
 </section>
 
             <section id="view-history" class="hidden mt-8 space-y-6 pb-10">
-    <div class="flex justify-between items-end px-2">
-        <h2 class="text-[15px] font-black uppercase tracking-[0.2em] text-indigo-500">Reporte Financiero</h2>
-        <button onclick="exportToExcel()" class="bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-[10px] flex items-center gap-2 shadow-lg shadow-emerald-200 active:scale-95 transition-transform">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    Exportar
-</button>
-    </div>
+    <header class="mt-4 relative overflow-hidden bg-[#08121e] rounded-[1.5rem] p-4 text-white shadow-2xl border border-slate-800/50">
+    <div class="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
     
-    <div class="sticky top-0 z-40 bg-slate-50/80 backdrop-blur-lg pt-4 pb-2">
-    <div class="flex bg-slate-200 p-1 rounded-2xl mx-2 shadow-sm border border-slate-300/20">
-        <button id="btn-report-inc" onclick="setReportSubView('income')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white text-green-600 shadow-sm transition-all">
-            Ingresos
-        </button>
-        <button id="btn-report-exp" onclick="setReportSubView('expense')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-500 transition-all">
-            Gastos
+    <div class="flex justify-between items-center relative z-10">
+        <div class="flex items-center gap-2">
+            <h2 class="text-[17px] font-black uppercase tracking-[0.15em] text-slate-200">
+                Reporte
+            </h2>
+            <span class="text-[17px] font-black uppercase tracking-[0.15em] text-amber-400">
+                Financiero
+            </span>
+        </div>
+
+        <button onclick="exportToExcel()" class="bg-emerald-500 text-white px-4 py-2 rounded-xl font-black uppercase text-[9px] flex items-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>Exportar</span>
         </button>
     </div>
-</div>
+</header>
+    
+    <div class="flex bg-slate-200 p-1 rounded-2xl mx-2">
+        <button id="btn-report-inc" onclick="setReportSubView('income')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white text-green-600 shadow-sm">Ingresos</button>
+        <button id="btn-report-exp" onclick="setReportSubView('expense')" class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-500">Gastos</button>
+    </div>
 
-<div id="report-breakdown-container" class="hidden bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 mx-2 mt-4">
+    <div id="report-breakdown-container" class="hidden bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 mx-2">
     <div class="flex items-center gap-2 mb-4">
         <span id="breakdown-icon" class="text-blue-500">⏱️</span>
         <h3 id="breakdown-title" class="text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Distribución</h3>
     </div>
+      
     <div id="lista-breakdown" class="space-y-4"></div>
 </div>
 
-<div id="historial-agrupado" class="space-y-8 px-2 mt-6"></div>
-
+    <div id="historial-agrupado" class="space-y-8 px-2"></div>
+</section>
+     
             <section id="view-settings" class="hidden mt-8 space-y-6 pb-10">
-                <h2 class="text-[20px] font-black italic uppercase tracking-[0.2em] text-indigo-500">Ajustes</h2>
+                <header class="mt-4 relative overflow-hidden bg-[#08121e] rounded-[1.5rem] p-4 text-white shadow-2xl border border-slate-800/50">
+    <div class="absolute top-0 right-0 w-20 h-20 bg-indigo-500/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+    
+    <div class="flex justify-between items-center relative z-10">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-500/20 p-2 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <h2 class="text-[14px] font-black uppercase tracking-[0.2em] text-amber-400 italic">
+                    Configuración
+                </h2>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-200">
+                    DEL Sistema
+                </span>
+            </div>
+        </div>
+</header>
                 
                 <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4">
                     <h3 class="text-[10px] font-black uppercase text-slate-800 tracking-widest italic">Gestionar Unidades</h3>
@@ -283,7 +309,6 @@
     </button>
 </nav>
     </div>
-
 
     <script type="module" src="contratos.js"></script>
 </body>
