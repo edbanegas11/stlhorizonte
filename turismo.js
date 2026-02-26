@@ -270,13 +270,13 @@ if (document.getElementById('ex-date')) document.getElementById('ex-date').value
 
             if (svg) {
                 // Quitamos el color naranja y el brillo de todos
-                svg.classList.remove('text-indigo-300/90');
+                svg.classList.remove('text-amber-400');
                 svg.classList.add('text-slate-400');
                 svg.style.color = ''; // Borra el naranja manual
                 svg.style.filter = 'none'; // Borra el brillo manual
             }
             if (span) {
-                span.classList.remove('text-indigo-300/90');
+                span.classList.remove('text-amber-400');
                 span.classList.add('text-slate-400');
                 span.style.color = ''; // Borra el naranja manual
             }
@@ -295,15 +295,15 @@ if (document.getElementById('ex-date')) document.getElementById('ex-date').value
         
         if (icon) {
             icon.classList.remove('text-slate-400');
-            icon.classList.add('text-indigo-300/90');
+            icon.classList.add('text-amber-400');
             // Aplicamos el color naranja directamente por si Tailwind tiene conflictos
-            icon.style.color = '#a5b4fc'; 
+            icon.style.color = '#fbbf24'; 
             icon.style.filter = 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.5))';
         }
         if (text) {
             text.classList.remove('text-slate-400');
-            text.classList.add('text-indigo-300/90');
-            text.style.color = '#a5b4fc';
+            text.classList.add('text-amber-400');
+            text.style.color = '#fbbf24';
         }
     }
 
