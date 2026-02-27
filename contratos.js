@@ -530,6 +530,11 @@ window.renderDashboard = () => {
 window.renderHistory = function() {
     const container = document.getElementById('historial-agrupado');
     const reportBalance = document.getElementById('report-balance-caja');
+    
+    // IDs de los montos en los botones (asegúrate de que coincidan con el HTML)
+    const tabIn = document.getElementById('tab-total-in');
+    const tabOut = document.getElementById('tab-total-out');
+    
     const filtro = document.getElementById('global-filter')?.value || 'all';
     if (!container) return;
 
@@ -539,17 +544,27 @@ window.renderHistory = function() {
         return t.date && t.date.startsWith(filtro);
     });
 
-    // 2. Cálculo de Balance del periodo filtrado
-    let balanceTotal = dataFiltradaPeriodo.reduce((acc, t) => {
-        const amt = parseFloat(t.amount) || 0;
-        return acc + (t.type === 'income' ? amt : -amt);
-    }, 0);
+    // 2. Cálculo de Totales para Botones y Balance
+    let sumaIn = 0;
+    let sumaOut = 0;
 
+    dataFiltradaPeriodo.forEach(t => {
+        const amt = parseFloat(t.amount) || 0;
+        if (t.type === 'income') sumaIn += amt;
+        else sumaOut += amt;
+    });
+
+    // 3. Insertar montos en los botones de la subvista
+    if (tabIn) tabIn.innerText = `L ${sumaIn.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    if (tabOut) tabOut.innerText = `L ${sumaOut.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+    // 4. Balance del periodo filtrado
+    let balanceTotal = sumaIn - sumaOut;
     if (reportBalance) {
         reportBalance.innerText = `L ${balanceTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     }
 
-    // 3. Filtrado por tipo (Ingreso/Gasto) para la vista de Reportes
+    // 5. Filtrado por tipo (Ingreso/Gasto) para la lista visual
     const filteredByType = dataFiltradaPeriodo.filter(t => t.type === reportSubView);
     const groups = {};
 
