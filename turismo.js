@@ -25,6 +25,55 @@ let unidadesConfig = ['Hyundai County', 'Toyota Hiace'];
 let catEgresos = ['Combustible', 'Sueldos y Viáticos', 'Repuestos', 'Mantenimiento', 'Gastos de Operaciones'];
 let catIngresos = []; // Valores por defecto
 
+window.updateFilterOptions = () => {
+    const filterSelect = document.getElementById('global-filter');
+    if (!filterSelect) return;
+
+    // 1. Obtener el mes actual en formato "YYYY-MM" (ej: 2026-02)
+    const hoy = new Date();
+    const mesActual = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0');
+
+    // 2. Extraer periodos únicos de las transacciones
+    const periods = [...new Set(localTransactions
+        .filter(t => t.date)
+        .map(t => t.date.substring(0, 7))
+    )].sort().reverse();
+
+    const years = [...new Set(periods.map(p => p.substring(0, 4)))].sort().reverse();
+
+    // 3. Construir el HTML
+    let optionsHtml = `<option value="all">Ver Todo el Histórico</option>`;
+
+    if (years.length > 0) {
+        optionsHtml += `<optgroup label="Años">`;
+        years.forEach(year => {
+            optionsHtml += `<option value="${year}">Todo el año ${year}</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+    }
+
+    if (periods.length > 0) {
+        optionsHtml += `<optgroup label="Meses">`;
+        periods.forEach(period => {
+            const [year, month] = period.split('-');
+            const dateObj = new Date(year, parseInt(month) - 1);
+            const monthName = dateObj.toLocaleString('es-HN', { month: 'long' }).toUpperCase();
+            
+            // Si el periodo coincide con el mes actual, le ponemos 'selected'
+            const isSelected = (period === mesActual) ? 'selected' : '';
+            optionsHtml += `<option value="${period}" ${isSelected}>${monthName} ${year}</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+    }
+
+    filterSelect.innerHTML = optionsHtml;
+
+    // 4. Si después de cargar, el selector quedó en "Ver Todo" pero existe el mes actual, lo forzamos
+    if (filterSelect.value === 'all' && periods.includes(mesActual)) {
+        filterSelect.value = mesActual;
+    }
+};
+
 // --- 1. ACCIONES DE FIREBASE ---
 window.saveIncome = async () => {
     const elAmount = document.getElementById('in-amount');
@@ -360,15 +409,22 @@ window.renderDashboard = () => {
     const balanceTotal = document.getElementById('balance-total');
     const dashIn = document.getElementById('dash-total-in');
     const dashOut = document.getElementById('dash-total-out');
+    const filtro = document.getElementById('global-filter')?.value || 'all';
     
     if (!listaTransacciones) return;
+
+    // 1. FILTRADO: Decidir qué data procesar
+    const dataFiltrada = localTransactions.filter(t => {
+        if (filtro === 'all') return true;
+        return t.date && t.date.startsWith(filtro);
+    });
 
     let totalGeneral = 0;
     let sumaIngresos = 0;
     let sumaGastos = 0;
 
-    // 1. Procesamos totales (Cálculos exactos)
-    localTransactions.forEach((t) => {
+    // 2. Procesamos totales sobre la data filtrada
+    dataFiltrada.forEach((t) => {
         const monto = parseFloat(t.amount) || 0;
         if (t.type === 'income') {
             sumaIngresos += monto;
@@ -379,51 +435,39 @@ window.renderDashboard = () => {
         }
     });
 
-    // 2. Ordenamos por FECHA DE VIAJE (t.date) y tomamos los 10 más actuales
-    const recientes = [...localTransactions]
+    // 3. Ordenamos y tomamos los 10 más actuales del periodo filtrado
+    const recientes = [...dataFiltrada]
         .sort((a, b) => {
-            // Convertimos t.date (YYYY-MM-DD) a milisegundos para comparar
             const dateA = new Date((a.date || "2000-01-01") + 'T00:00:00').getTime();
             const dateB = new Date((b.date || "2000-01-01") + 'T00:00:00').getTime();
-
-            if (dateB !== dateA) {
-                return dateB - dateA; // Ordenar por fecha de viaje (más nueva a más vieja)
-            }
-            
-            // Si la fecha de viaje es la misma, usamos createdAt (fecha de creación) como desempate
+            if (dateB !== dateA) return dateB - dateA;
             const createA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
             const createB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
             return createB - createA;
         })
         .slice(0, 10);
 
-    // 3. Generamos el HTML con el diseño "Premium"
+    // 4. Generamos el HTML
     let html = '';
     recientes.forEach((t) => {
         const isInc = t.type === 'income';
         const monto = parseFloat(t.amount) || 0;
         const mainText = t.description || t.category;
-        const subText = t.category;
-
-        // Formatear la fecha corta para mostrarla en el inicio (ej: 23/02)
         const dateObj = new Date((t.date || "") + 'T00:00:00');
         const displayDate = t.date ? dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'}) : 'S/F';
 
         html += `
             <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-1 mb-2 active:scale-[0.98] transition-transform">
                 <div class="flex flex-col min-w-0 flex-1 pr-3">
-                    <p class="text-[11px] font-black text-slate-800 uppercase italic truncate leading-none mb-1">
-                        ${mainText}
-                    </p>
+                    <p class="text-[11px] font-black text-slate-800 uppercase italic truncate leading-none mb-1">${mainText}</p>
                     <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1">
-                        <span class="${isInc ? 'text-emerald-500' : 'text-red-500'} font-black">${subText}</span> 
+                        <span class="${isInc ? 'text-emerald-500' : 'text-red-500'} font-black">${t.category}</span> 
                         <span class="text-slate-300">•</span> 
                         <span class="text-blue-500 font-black">${displayDate}</span>
                         <span class="text-slate-300">•</span> 
                         <span class="text-slate-500">${t.unit || 'S/U'}</span>
                     </p>
                 </div>
-
                 <div class="text-right">
                     <p class="font-black text-sm ${isInc ? 'text-emerald-600' : 'text-red-600'} whitespace-nowrap leading-none">
                         ${isInc ? '+' : '-'} L ${monto.toLocaleString('en-US', {minimumFractionDigits: 2})}
@@ -432,27 +476,28 @@ window.renderDashboard = () => {
             </div>`;
     });
 
-    // 4. Actualizamos la Interfaz
-    listaTransacciones.innerHTML = html || `
-        <div class="text-center py-10">
-            <p class="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Sin movimientos recientes</p>
-        </div>`;
+    listaTransacciones.innerHTML = html || `<p class="text-center py-10 text-slate-400 text-[10px] font-black uppercase tracking-widest">Sin movimientos en este periodo</p>`;
 
-    if (balanceTotal) {
-        balanceTotal.innerText = `L ${totalGeneral.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-    }
-    
+    if (balanceTotal) balanceTotal.innerText = `L ${totalGeneral.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     if (dashIn) dashIn.innerText = `L ${sumaIngresos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     if (dashOut) dashOut.innerText = `L ${sumaGastos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-}
+};
+
 // --- 3. RENDERIZADO DE HISTORIAL AGRUPADO ---
-function renderHistory() {
+window.renderHistory = function() {
     const container = document.getElementById('historial-agrupado');
     const reportBalance = document.getElementById('report-balance-caja');
+    const filtro = document.getElementById('global-filter')?.value || 'all';
     if (!container) return;
 
-    // 1. Balance Total (Se mantiene igual)
-    let balanceTotal = localTransactions.reduce((acc, t) => {
+    // 1. FILTRADO INICIAL: Periodo Global
+    const dataFiltradaPeriodo = localTransactions.filter(t => {
+        if (filtro === 'all') return true;
+        return t.date && t.date.startsWith(filtro);
+    });
+
+    // 2. Cálculo de Balance del periodo filtrado
+    let balanceTotal = dataFiltradaPeriodo.reduce((acc, t) => {
         const amt = parseFloat(t.amount) || 0;
         return acc + (t.type === 'income' ? amt : -amt);
     }, 0);
@@ -461,31 +506,22 @@ function renderHistory() {
         reportBalance.innerText = `L ${balanceTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     }
 
-    // 2. Filtrar y Agrupar por FECHA DE VIAJE (t.date)
-    const filtered = localTransactions.filter(t => t.type === reportSubView);
+    // 3. Filtrado por tipo (Ingreso/Gasto) para la vista de Reportes
+    const filteredByType = dataFiltradaPeriodo.filter(t => t.type === reportSubView);
     const groups = {};
 
-    filtered.forEach(t => {
-        // CORRECCIÓN: Usar t.date del input. Si no existe, usamos la fecha de hoy como respaldo.
-        // Agregamos T00:00:00 para evitar que la zona horaria reste un día al convertir.
+    filteredByType.forEach(t => {
         const dateStr = t.date || new Date().toISOString().split('T')[0];
         const dateObj = new Date(dateStr + 'T00:00:00');
-        
         const year = dateObj.getFullYear();
-        // Obtenemos el mes en texto
         const month = dateObj.toLocaleString('es-HN', { month: 'long' }).toUpperCase();
         
         if (!groups[year]) groups[year] = {};
         if (!groups[year][month]) groups[year][month] = [];
-        
-        // Guardamos el objeto con una propiedad extra para ordenar después
         groups[year][month].push({...t, dateObj: dateObj});
     });
 
-    // 3. Generar HTML con orden DESCENDENTE (Actual a Viejo)
     let html = '';
-    
-    // Ordenar Años: de Mayor a Menor
     const sortedYears = Object.keys(groups).sort((a, b) => b - a);
 
     sortedYears.forEach(year => {
@@ -496,59 +532,32 @@ function renderHistory() {
                 <div class="h-[1px] flex-1 bg-slate-200"></div>
             </div>`;
         
-        // Ordenar Meses: Necesitamos un mapa para saber que DICIEMBRE va antes que ENERO
         const mesesNombres = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
-        
-        const sortedMonths = Object.keys(groups[year]).sort((a, b) => {
-            return mesesNombres.indexOf(b) - mesesNombres.indexOf(a);
-        });
+        const sortedMonths = Object.keys(groups[year]).sort((a, b) => mesesNombres.indexOf(b) - mesesNombres.indexOf(a));
 
         sortedMonths.forEach(month => {
-            html += `
-                <h3 class="text-[10px] font-black uppercase text-slate-400 ml-4 border-l-4 border-blue-500 pl-3 italic mb-4 tracking-[0.2em]">
-                    ${month}
-                </h3>
-                <div class="space-y-3 mb-10">`;
+            html += `<h3 class="text-[10px] font-black uppercase text-slate-400 ml-4 border-l-4 border-blue-500 pl-3 italic mb-4 tracking-[0.2em]">${month}</h3><div class="space-y-3 mb-10">`;
             
-            // Ordenar transacciones dentro del mes: de día más reciente a más viejo
             groups[year][month].sort((a, b) => b.dateObj - a.dateObj).forEach(t => {
                 const isInc = t.type === 'income';
-                const mainText = t.description || t.category;
-
                 html += `
-                <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-2 active:scale-[0.98] transition-transform">
+                <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-2">
                     <div class="flex flex-col min-w-0 flex-1 pr-3">
-                        <p class="text-[11px] font-black text-slate-800 uppercase italic truncate leading-none mb-1">
-                            ${mainText}
-                        </p>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1">
+                        <p class="text-[11px] font-black text-slate-800 uppercase italic truncate mb-1">${t.description || t.category}</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
                             <span class="${isInc ? 'text-green-500' : 'text-red-500'} font-black">${t.category}</span> 
                             <span class="text-slate-300">•</span> 
-                            <span class="text-blue-500">${t.unit || 'S/U'}</span>
+                            <span class="text-blue-500 font-black">${t.unit || 'S/U'}</span>
                         </p>
                     </div>
-
                     <div class="flex items-center gap-3">
                         <div class="text-right">
-                            <p class="font-black text-sm ${isInc ? 'text-green-600' : 'text-red-600'} whitespace-nowrap leading-none">
-                                L ${parseFloat(t.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}
-                            </p>
-                            <p class="text-[8px] font-bold text-slate-400 uppercase mt-1">
-                                ${t.dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'})}
-                            </p>
+                            <p class="font-black text-sm ${isInc ? 'text-green-600' : 'text-red-600'}">L ${parseFloat(t.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                            <p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${t.dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'})}</p>
                         </div>
-                        
                         <div class="flex flex-col gap-1 border-l border-slate-50 pl-2">
-                            <button onclick="editTransaction('${t.id}')" class="p-2 rounded-xl bg-slate-50 active:bg-orange-100">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-orange-500">
-                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                                </svg>
-                            </button>
-                            <button onclick="deleteTransaction('${t.id}')" class="p-2 rounded-xl bg-slate-50 active:bg-red-100">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-red-500">
-                                    <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                                </svg>
-                            </button>
+                            <button onclick="editTransaction('${t.id}')" class="p-2 rounded-xl bg-slate-50"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="text-orange-500"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                            <button onclick="deleteTransaction('${t.id}')" class="p-2 rounded-xl bg-slate-50"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="text-red-500"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
                         </div>
                     </div>
                 </div>`;
@@ -557,11 +566,8 @@ function renderHistory() {
         });
     });
 
-    container.innerHTML = html || '<div class="text-center py-20"><p class="text-slate-400 font-bold uppercase text-[10px]">No hay registros</p></div>';
-
-    if (typeof renderReportBreakdown === 'function') {
-        renderReportBreakdown();
-    }
+    container.innerHTML = html || '<p class="text-center py-20 text-slate-400 font-bold uppercase text-[10px]">No hay registros en este periodo</p>';
+    if (typeof renderReportBreakdown === 'function') renderReportBreakdown();
 }
 
 // --- AÑADIR NUEVA UNIDAD ---
@@ -683,15 +689,24 @@ if (catList) {
     }
 }
 // --- RENDERIZAR DISTRIBUCIÓN DE GASTOS (BARRAS) ---
+// 1. LA FUNCIÓN PRINCIPAL (Sustituye la que tienes)
 window.renderReportBreakdown = () => {
     const container = document.getElementById('lista-breakdown');
     const wrapper = document.getElementById('report-breakdown-container');
     const titleElem = document.getElementById('breakdown-title');
     const iconElem = document.getElementById('breakdown-icon');
     
+    // Filtro inteligente
+    const filtro = document.getElementById('global-filter')?.value || 'all';
+    
     if (!container || !wrapper) return;
 
-    const data = localTransactions.filter(t => t.type === reportSubView);
+    // Filtrar data por Periodo y Tipo
+    const data = localTransactions.filter(t => {
+        const cumpleFecha = (filtro === 'all') || (t.date && t.date.startsWith(filtro));
+        return cumpleFecha && t.type === reportSubView;
+    });
+
     if (data.length === 0) {
         wrapper.classList.add('hidden');
         return;
@@ -700,8 +715,6 @@ window.renderReportBreakdown = () => {
     wrapper.classList.remove('hidden');
     const isIncome = reportSubView === 'income';
     
-    // Título compacto
-    titleElem.className = "text-[10px] font-black uppercase text-slate-400 tracking-widest italic";
     titleElem.innerText = isIncome ? 'Ingresos por Unidad' : 'Gastos por Unidad';
     iconElem.innerText = isIncome ? '📊' : '📉';
 
@@ -724,7 +737,7 @@ window.renderReportBreakdown = () => {
 
     let html = '';
 
-    // SECCIÓN A: BLOQUES POR UNIDAD (Tamaño Mediano)
+    // SECCIÓN A: Por Unidad
     Object.entries(mapaUnidades).sort((a, b) => b[1].total - a[1].total).forEach(([unidad, info]) => {
         html += `
             <div class="mb-6 p-5 bg-slate-50 rounded-[2rem] border border-slate-100">
@@ -733,21 +746,19 @@ window.renderReportBreakdown = () => {
                     <span class="text-lg font-black ${accentColor}">L ${info.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                 </div>
                 <div class="space-y-4">
-                    ${generarBarrasInternas(info.cats, info.total, barColor, accentColor)}
+                    ${window.generarBarrasInternas(info.cats, info.total, barColor, accentColor)}
                 </div>
             </div>
         `;
     });
 
-    // SECCIÓN B: RESUMEN GLOBAL (Azul)
+    // SECCIÓN B: Resumen Global
     const totalGeneral = Object.values(totalesGlobalesPorCat).reduce((a, b) => a + b, 0);
     html += `
         <div class="mt-8 pt-6 border-t-2 border-dashed border-slate-200">
-            <h4 class="text-[9px] font-black uppercase text-slate-400 mb-4 tracking-widest text-center italic">
-                Resumen Global ${isIncome ? 'SERVICIOS' : 'Categorías'}
-            </h4>
+            <h4 class="text-[9px] font-black uppercase text-slate-400 mb-4 tracking-widest text-center italic">Resumen Global</h4>
             <div class="space-y-4">
-                ${generarBarrasInternas(totalesGlobalesPorCat, totalGeneral, 'bg-blue-600', 'text-blue-600')}
+                ${window.generarBarrasInternas(totalesGlobalesPorCat, totalGeneral, 'bg-blue-600', 'text-blue-600')}
             </div>
         </div>
     `;
@@ -755,7 +766,9 @@ window.renderReportBreakdown = () => {
     container.innerHTML = html;
 };
 
-function generarBarrasInternas(diccionarioCats, totalPadre, colorBarra, colorTexto) {
+// 2. LA FUNCIÓN AUXILIAR (Esta es la que te falta o no encuentra)
+// Le ponemos window. para que sea accesible desde cualquier parte
+window.generarBarrasInternas = (diccionarioCats, totalPadre, colorBarra, colorTexto) => {
     return Object.entries(diccionarioCats)
         .sort((a, b) => b[1] - a[1])
         .map(([cat, monto]) => {
@@ -769,18 +782,17 @@ function generarBarrasInternas(diccionarioCats, totalPadre, colorBarra, colorTex
                                 L ${monto.toLocaleString('en-US', {minimumFractionDigits: 2})}
                             </span>
                         </div>
-                        <span class="text-[10px] font-black ${colorTexto} bg-white px-2 py-0.5 rounded-md border border-slate-100 shadow-sm">
+                        <span class="text-[10px] font-black ${colorTexto} bg-white px-2 py-0.5 rounded-md border border-slate-100">
                             ${porcentaje.toFixed(1)}%
                         </span>
                     </div>
-                    <div class="w-full h-2 bg-white rounded-full overflow-hidden border border-slate-100">
-                        <div class="h-full ${colorBarra} transition-all duration-1000 shadow-inner" 
-                             style="width: ${porcentaje}%"></div>
+                    <div class="w-full h-2 bg-white rounded-full overflow-hidden border border-slate-100 shadow-inner">
+                        <div class="h-full ${colorBarra} transition-all duration-1000" style="width: ${porcentaje}%"></div>
                     </div>
                 </div>
             `;
         }).join('');
-}
+};
 
 function updateSelects() {
     const selUnitIn = document.getElementById('in-unit');
@@ -1006,6 +1018,14 @@ onSnapshot(q, (snapshot) => {
     localTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     renderDashboard();
     renderHistory();
+    localTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // 1. Primero actualizamos el selector con los meses reales que vinieron de Firebase
+    window.updateFilterOptions(); 
+    
+    // 2. Luego dibujamos todo lo demás
+    renderDashboard();
+    if (typeof renderHistory === 'function') renderHistory();
 });
 
 // Inicializar
