@@ -281,7 +281,8 @@ window.updateTransactionFirebase = async () => {
 // --- 1. NAVEGACIÓN ENTRE VISTAS ---
 window.showView = (viewName) => {
     // 1. Ocultar todas las secciones
-    const views = ['dashboard', 'income', 'expense', 'history', 'settings'];
+    // Agregamos 'calculator' a la lista para que se oculte cuando vas a otras pantallas
+    const views = ['dashboard', 'income', 'expense', 'history', 'settings', 'calculator'];
     views.forEach(v => {
         const section = document.getElementById(`view-${v}`);
         if (section) section.classList.add('hidden');
@@ -294,23 +295,24 @@ window.showView = (viewName) => {
         window.scrollTo(0, 0);
     }
 
-    // 3. ACTUALIZAR COLORES DE LA BARRA DE NAVEGACIÓN (Diseño Horizonte)
+    // 3. ACTUALIZAR COLORES DE LA BARRA DE NAVEGACIÓN
+    // Agregamos el mapeo del botón "Cotizar"
     const navButtons = {
         'dashboard': 'nav-home',
         'history': 'nav-reports',
+        'calculator': 'nav-calc',
         'settings': 'nav-settings'
     };
   
-  // Dentro de window.showView para 'income' o 'expense'
-const hoy = new Date().toISOString().split('T')[0];
-if (document.getElementById('in-date')) document.getElementById('in-date').value = hoy;
-if (document.getElementById('ex-date')) document.getElementById('ex-date').value = hoy;
+    // Resetear fechas en formularios de ingresos/gastos
+    const hoy = new Date().toISOString().split('T')[0];
+    if (document.getElementById('in-date')) document.getElementById('in-date').value = hoy;
+    if (document.getElementById('ex-date')) document.getElementById('ex-date').value = hoy;
 
-    // Primero: Apagamos todos los botones (Gris Slate y opacidad baja)
+    // Primero: Apagamos todos los botones (Estado inactivo)
     Object.values(navButtons).forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
-            // Quitamos opacidad total y ponemos opacidad baja
             btn.classList.remove('opacity-100');
             btn.classList.add('opacity-40');
             
@@ -318,21 +320,20 @@ if (document.getElementById('ex-date')) document.getElementById('ex-date').value
             const span = btn.querySelector('span');
 
             if (svg) {
-                // Quitamos el color naranja y el brillo de todos
                 svg.classList.remove('text-amber-400');
                 svg.classList.add('text-slate-400');
-                svg.style.color = ''; // Borra el naranja manual
-                svg.style.filter = 'none'; // Borra el brillo manual
+                svg.style.color = ''; 
+                svg.style.filter = 'none';
             }
             if (span) {
                 span.classList.remove('text-amber-400');
                 span.classList.add('text-slate-400');
-                span.style.color = ''; // Borra el naranja manual
+                span.style.color = '';
             }
         }
     });
 
-    // Segundo: Encendemos el botón activo (Verde Esmeralda y opacidad total)
+    // Segundo: Encendemos el botón activo (Efecto Ámbar con Brillo)
     const activeId = navButtons[viewName];
     if (activeId) {
         const activeBtn = document.getElementById(activeId);
@@ -345,7 +346,6 @@ if (document.getElementById('ex-date')) document.getElementById('ex-date').value
         if (icon) {
             icon.classList.remove('text-slate-400');
             icon.classList.add('text-amber-400');
-            // Aplicamos el color naranja directamente por si Tailwind tiene conflictos
             icon.style.color = '#fbbf24'; 
             icon.style.filter = 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.5))';
         }
@@ -360,27 +360,21 @@ if (document.getElementById('ex-date')) document.getElementById('ex-date').value
     if (viewName === 'history') renderHistory();
     if (viewName === 'settings') renderSettings();
     
+    // Si entras a la calculadora, puedes resetear los campos si quieres:
+    if (viewName === 'calculator') {
+        const resultDiv = document.getElementById('calc-result');
+        if (resultDiv) resultDiv.classList.add('hidden');
+    }
+    
     if (viewName === 'expense') {
         prepararVistaGastos();
-        // CORRECCIÓN: Agregamos la validación para que no dé error si no existe
-        if (typeof fillUnitSelects === 'function') {
-            fillUnitSelects();
-        } else {
-            console.warn("La función fillUnitSelects no está definida aún.");
-        }
+        if (typeof fillUnitSelects === 'function') fillUnitSelects();
     }
     
     if (viewName === 'income') {
-        // Esta parte ya la tenías bien protegida
         if (typeof fillUnitSelects === 'function') fillUnitSelects();
-        
         const inAmount = document.getElementById('in-amount');
         if (inAmount) inAmount.value = '';
-        
-        const inUnit = document.getElementById('in-unit');
-        const inCat = document.getElementById('in-category');
-        if (inUnit) inUnit.selectedIndex = 0;
-        if (inCat) inCat.selectedIndex = 0;
     }
 };
 
@@ -1024,6 +1018,74 @@ window.exportToExcel = () => {
     link.setAttribute("href", url);
     link.setAttribute("download", `Contabilidad_${filtro || 'General'}.csv`);
     link.click();
+};
+
+window.calcularTarifa = () => {
+    const bus = document.getElementById('calc-bus').value;
+    const km = parseFloat(document.getElementById('calc-km').value) || 0;
+    const days = parseInt(document.getElementById('calc-days').value) || 1;
+    
+    let totalKm = 0;
+    let diaExtraPrice = bus === 'hiace' ? 1500 : 2500;
+    let viaticos = (days - 1) * 500;
+
+    // LÓGICA DE PRECIOS SEGÚN TUS NUEVOS RANGOS
+    if (bus === 'hiace') {
+        if (km <= 30) {
+            totalKm = 1000;
+        } else if (km <= 50) {
+            totalKm = km * 30;
+        } else if (km <= 150) {
+            totalKm = km * 20;
+        } else if (km <= 300) {
+            totalKm = km * 16;
+        } else {
+            totalKm = km * 11;
+        }
+    } else { // LÓGICA COUNTY
+    
+        if (km <= 30) {
+            totalKm = 1500;
+        } else if (km <= 50) {
+            totalKm = km * 35;
+        } else if (km <= 150) {
+            totalKm = km * 30;
+        } else if (km <= 300) {
+            totalKm = km * 24;
+        } else {
+            totalKm = km * 16.50;
+        }
+    }
+
+    // Cálculo de días adicionales y viáticos
+    const totalDiasExtra = (days - 1) * diaExtraPrice;
+    const granTotal = totalKm + totalDiasExtra + viaticos;
+
+    // Actualizar la interfaz
+    const resultDiv = document.getElementById('calc-result');
+    if (resultDiv) {
+        resultDiv.classList.remove('hidden');
+        document.getElementById('res-total').innerText = `L ${granTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        document.getElementById('res-val-km').innerText = `L ${totalKm.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        document.getElementById('res-val-days').innerText = `L ${totalDiasExtra.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        document.getElementById('res-val-viaticos').innerText = `L ${viaticos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    }
+};
+
+window.enviarCotizacionWhatsApp = () => {
+    const bus = document.getElementById('calc-bus').options[document.getElementById('calc-bus').selectedIndex].text;
+    const km = document.getElementById('calc-km').value;
+    const days = document.getElementById('calc-days').value;
+    const total = document.getElementById('res-total').innerText;
+
+    const mensaje = `*STL HORIZONTE - COTIZACIÓN*%0A%0A` +
+                    `*Unidad:* ${bus}%0A` +
+                    `*Distancia:* ${km} KM%0A` +
+                    `*Duración:* ${days} Día(s)%0A%0A` +
+                    `*TOTAL ESTIMADO:* ${total}%0A%0A` +
+                    `_Precios sujetos a cambios según disponibilidad._`;
+
+    window.open(`https://wa.me/?text=${mensaje}`, '_blank');
 };
 
 // --- 7. LISTENERS TIEMPO REAL ---
