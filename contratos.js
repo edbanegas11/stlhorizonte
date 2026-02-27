@@ -53,22 +53,21 @@ window.updateFilterOptions = () => {
     const filterSelect = document.getElementById('global-filter');
     if (!filterSelect) return;
 
-    // Guardar el valor seleccionado actualmente para que no se pierda al recargar
-    const currentSelection = filterSelect.value || 'all';
+    // 1. Obtener el mes actual en formato "YYYY-MM" (ej: 2026-02)
+    const hoy = new Date();
+    const mesActual = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0');
 
-    // 1. Extraer periodos únicos de las transacciones (YYYY-MM)
+    // 2. Extraer periodos únicos de las transacciones
     const periods = [...new Set(localTransactions
-        .filter(t => t.date) // Solo los que tienen fecha
-        .map(t => t.date.substring(0, 7)) // Extraer "YYYY-MM"
-    )].sort().reverse(); // De más reciente a más viejo
+        .filter(t => t.date)
+        .map(t => t.date.substring(0, 7))
+    )].sort().reverse();
 
-    // 2. Extraer años únicos (YYYY)
     const years = [...new Set(periods.map(p => p.substring(0, 4)))].sort().reverse();
 
-    // 3. Construir el HTML del selector
+    // 3. Construir el HTML
     let optionsHtml = `<option value="all">Ver Todo el Histórico</option>`;
 
-    // Agregar Años
     if (years.length > 0) {
         optionsHtml += `<optgroup label="Años">`;
         years.forEach(year => {
@@ -77,26 +76,25 @@ window.updateFilterOptions = () => {
         optionsHtml += `</optgroup>`;
     }
 
-    // Agregar Meses dinámicos
     if (periods.length > 0) {
         optionsHtml += `<optgroup label="Meses">`;
         periods.forEach(period => {
             const [year, month] = period.split('-');
             const dateObj = new Date(year, parseInt(month) - 1);
             const monthName = dateObj.toLocaleString('es-HN', { month: 'long' }).toUpperCase();
-            optionsHtml += `<option value="${period}">${monthName} ${year}</option>`;
+            
+            // Si el periodo coincide con el mes actual, le ponemos 'selected'
+            const isSelected = (period === mesActual) ? 'selected' : '';
+            optionsHtml += `<option value="${period}" ${isSelected}>${monthName} ${year}</option>`;
         });
         optionsHtml += `</optgroup>`;
     }
 
     filterSelect.innerHTML = optionsHtml;
-    
-    // Restaurar la selección previa si todavía existe
-    filterSelect.value = currentSelection;
-    
-    // Si la selección previa ya no existe (ej. se borró el último dato de un mes), volver a "all"
-    if (filterSelect.selectedIndex === -1) {
-        filterSelect.value = 'all';
+
+    // 4. Si después de cargar, el selector quedó en "Ver Todo" pero existe el mes actual, lo forzamos
+    if (filterSelect.value === 'all' && periods.includes(mesActual)) {
+        filterSelect.value = mesActual;
     }
 };
 
