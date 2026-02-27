@@ -196,14 +196,14 @@
     <div class="flex bg-slate-200 p-1 rounded-2xl mx-2">
         <button id="btn-report-inc" onclick="setReportSubView('income')" 
             class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest bg-white text-green-600 shadow-sm transition-all flex flex-col items-center">
-            <span>Ingresos</span>
-            <span id="tab-total-in" class="text-[11px] mt-1 opacity-80">L 0.00</span>
+            <span class="w-full">Ingresos</span>
+            <span id="tab-total-in" class="text-[11px] mt-1 opacity-80 block w-full">L 0.00</span>
         </button>
         
         <button id="btn-report-exp" onclick="setReportSubView('expense')" 
             class="flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-slate-500 transition-all flex flex-col items-center">
-            <span>Gastos</span>
-            <span id="tab-total-out" class="text-[11px] mt-1 opacity-80">L 0.00</span>
+            <span class="w-full">Gastos</span>
+            <span id="tab-total-out" class="text-[11px] mt-1 opacity-80 block w-full">L 0.00</span>
         </button>
     </div>
 </div>
@@ -268,7 +268,71 @@
                     </div>
                 </div>
             </section>
+<section id="view-calculator" class="hidden space-y-6 pb-20">
+    <header class="mt-4 relative overflow-hidden bg-[#08121e] rounded-[1.5rem] p-5 text-white shadow-2xl">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+        <h2 class="text-[14px] font-black uppercase tracking-[0.2em] text-amber-400 italic">Cotizador de Viajes</h2>
+        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">Cálculo de tarifas para turismo</p>
+    </header>
 
+    <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-5">
+        <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block">Unidad Requerida</label>
+            <select id="calc-bus" class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-blue-500/20 transition-all">
+                <option value="hiace">Toyota Hiace (15 Pasajeros)</option>
+                <option value="county">Hyundai County (25 Pasajeros)</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block">Distancia Total (KM Ida y Vuelta)</label>
+            <input type="number" id="calc-km" placeholder="Ej: 460" class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold outline-none">
+        </div>
+
+        <div>
+            <label class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block">Duración del Servicio (Días)</label>
+            <div class="flex items-center gap-4 bg-slate-50 rounded-2xl p-2">
+                <button onclick="document.getElementById('calc-days').value = Math.max(1, parseInt(document.getElementById('calc-days').value)-1)" class="w-12 h-12 bg-white rounded-xl shadow-sm font-black text-xl">-</button>
+                <input type="number" id="calc-days" value="1" readonly class="flex-1 bg-transparent text-center font-black text-lg outline-none">
+                <button onclick="document.getElementById('calc-days').value = parseInt(document.getElementById('calc-days').value)+1" class="w-12 h-12 bg-white rounded-xl shadow-sm font-black text-xl">+</button>
+            </div>
+        </div>
+
+        <button onclick="calcularTarifa()" class="w-full bg-blue-600 text-white font-black py-5 rounded-[2rem] shadow-xl shadow-blue-200 active:scale-95 transition-all uppercase text-[10px] tracking-[0.2em]">
+            Generar Presupuesto
+        </button>
+    </div>
+
+    <div id="calc-result" class="hidden space-y-4 animate-fadeIn">
+        <div class="bg-gradient-to-br from-[#08121e] to-[#162a45] text-white p-8 rounded-[3rem] shadow-2xl relative overflow-hidden">
+             <div class="absolute -right-4 -bottom-4 opacity-10">
+                <svg width="120" height="120" fill="currentColor" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2zM9 7h6m-6 4h2m2 0h2m-4 4h2m2 0h2M9 14h2"/></svg>
+             </div>
+             <p class="text-[10px] font-black uppercase opacity-50 tracking-[0.3em] text-center mb-2">Total Estimado</p>
+             <h3 id="res-total" class="text-4xl font-black text-center text-amber-400 tracking-tighter mb-6">L 0.00</h3>
+             
+             <div class="space-y-3 border-t border-white/10 pt-6">
+                <div class="flex justify-between items-center">
+                    <span class="text-[9px] font-bold uppercase text-slate-400">Recorrido Base</span>
+                    <span id="res-val-km" class="text-sm font-black">L 0.00</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-[9px] font-bold uppercase text-slate-400">Días de Espera</span>
+                    <span id="res-val-days" class="text-sm font-black">L 0.00</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-[9px] font-bold uppercase text-slate-400">Viáticos Chofer</span>
+                    <span id="res-val-viaticos" class="text-sm font-black">L 0.00</span>
+                </div>
+             </div>
+        </div>
+        
+        <button onclick="enviarCotizacionWhatsApp()" class="w-full bg-emerald-500 text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase text-[10px] tracking-widest">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Enviar por WhatsApp
+        </button>
+    </div>
+</section>
         </main>
       
 <div id="modal-edit" class="hidden fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -304,34 +368,42 @@
     }
     .animate-slide-up { animation: slide-up 0.3s ease-out; }
 </style>
-        <nav class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-[#08121e]/90 backdrop-blur-2xl border border-white/10 p-3 flex justify-around items-center z-50 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
+        <nav class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[95%] max-w-md bg-[#08121e]/90 backdrop-blur-2xl border border-white/10 p-3 flex justify-around items-center z-50 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
     
-    <button id="nav-home" onclick="showView('dashboard')" class="flex flex-col items-center gap-1 group flex-1 transition-all">
-        <div class="p-2 rounded-2xl group-active:scale-90 transition-transform">
-            <svg class="w-6 h-6 text-amber-400 transition-colors drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <button id="nav-home" onclick="showView('dashboard')" class="flex flex-col items-center gap-1 group flex-1 transition-all opacity-100">
+        <div class="p-2 rounded-2xl group-active:scale-90 transition-transform text-amber-400" style="color: #fbbf24; filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.5));">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
             </svg>
         </div>
-        <span class="text-[9px] font-black uppercase tracking-[0.2em] text-amber-400 italic transition-colors">Inicio</span>
+        <span class="text-[8px] font-black uppercase tracking-widest italic text-amber-400" style="color: #fbbf24;">Inicio</span>
     </button>
 
     <button id="nav-reports" onclick="showView('history')" class="flex flex-col items-center gap-1 group flex-1 transition-all opacity-40">
-        <div class="p-2 rounded-2xl group-active:scale-90 transition-transform">
-            <svg class="w-6 h-6 text-slate-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="p-2 rounded-2xl group-active:scale-90 transition-transform text-slate-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
             </svg>
         </div>
-        <span class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 italic transition-colors">Reportes</span>
+        <span class="text-[8px] font-black uppercase tracking-widest italic text-slate-400">Reportes</span>
+    </button>
+
+    <button id="nav-calc" onclick="showView('calculator')" class="flex flex-col items-center gap-1 group flex-1 transition-all opacity-40">
+        <div class="p-2 rounded-2xl group-active:scale-90 transition-transform text-slate-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+        </div>
+        <span class="text-[8px] font-black uppercase tracking-widest italic text-slate-400">Cotizar</span>
     </button>
 
     <button id="nav-settings" onclick="showView('settings')" class="flex flex-col items-center gap-1 group flex-1 transition-all opacity-40">
-        <div class="p-2 rounded-2xl group-active:scale-90 transition-transform">
-            <svg class="w-6 h-6 text-slate-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="p-2 rounded-2xl group-active:scale-90 transition-transform text-slate-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
             </svg>
         </div>
-        <span class="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 italic transition-colors">Ajustes</span>
+        <span class="text-[8px] font-black uppercase tracking-widest italic text-slate-400">Ajustes</span>
     </button>
 </nav>
     </div>
