@@ -66,9 +66,11 @@
     
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('SW registrado', reg))
-      .catch(err => console.log('Error al registrar SW', err));
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('✅ STL Offline Activo', reg.scope))
+        .catch(err => console.log('❌ Error al registrar SW', err));
+    });
   }
 </script>
     
