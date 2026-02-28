@@ -1029,15 +1029,14 @@ window.calcularTarifa = () => {
     let totalKmDía1 = 0;
     let pagoChoferTotal = 0;
     let viaticosChoferTotal = 0;
-    let precioGalon = 90; // Precio actual aproximado
+    let precioGalon = 90; 
 
-    // 1. TARIFA DE COBRO (Recorrido Día 1)
+    // 1. TARIFA DE COBRO (Recorrido Día 1 - Basado en tus rangos exactos)
     if (bus === 'hiace') {
         if (km <= 30) totalKmDía1 = 1000;
         else if (km <= 50) totalKmDía1 = km * 30;
         else if (km <= 100) totalKmDía1 = km * 20;
         else if (km <= 200) totalKmDía1 = km * 16;
-        else if (km <= 300) totalKmDía1 = km * 11;
         else if (km <= 600) totalKmDía1 = km * 11;
         else totalKmDía1 = km * 10;
     } else { // County
@@ -1045,12 +1044,12 @@ window.calcularTarifa = () => {
         else if (km <= 50) totalKmDía1 = km * 42;
         else if (km <= 100) totalKmDía1 = km * 32;
         else if (km <= 200) totalKmDía1 = km * 28;
-        else if (km <= 300) totalKmDía1 = km * 16;
         else if (km <= 600) totalKmDía1 = km * 16;
         else totalKmDía1 = km * 14;
     }
 
-    // 2. PAGO DE CHOFER Y VIÁTICOS (Día 1)
+    // 2. GASTO OPERATIVO: PAGO DE CHOFER Y VIÁTICOS (SOLO DÍA 1)
+    // Estos son los gastos fijos de salida del primer día
     if (zona === 'nacional') {
         if (km <= 100) { pagoChoferTotal = 500; viaticosChoferTotal = 200; }
         else if (km <= 500) { pagoChoferTotal = 700; viaticosChoferTotal = 300; }
@@ -1060,32 +1059,36 @@ window.calcularTarifa = () => {
         viaticosChoferTotal = 1000;
     }
 
-    // 3. COMBUSTIBLE
+    // 3. GASTO OPERATIVO: COMBUSTIBLE (Total del recorrido)
     const rendimiento = bus === 'hiace' ? 30 : 20;
     const costoFuel = (km / rendimiento) * precioGalon;
 
-    // 4. DÍAS EXTRAS (Gastos y Cobros)
-    const cobroPaqueteExtra = zona === 'internacional' ? 7000 : 5000;
+    // 4. COBRO DE DÍAS EXTRAS (Lo que el cliente paga adicional)
+    const cobroPaqueteExtra = zona === 'internacional' ? 8000 : 5000;
     const totalCobroDiasExtra = (days - 1) * cobroPaqueteExtra;
 
-    // Gasto real de días extras (Chofer + Viáticos adicionales)
-    if (days > 1) {
-        const pagoDiarioExtra = zona === 'internacional' ? 1000 : 1000; // Sueldo
-        const viaticoDiarioExtra = zona === 'internacional' ? 1000 : 1500; // Hotel/Comida estimado
-        pagoChoferTotal += (days - 1) * pagoDiarioExtra;
-        viaticosChoferTotal += (days - 1) * viaticoDiarioExtra;
-    }
+    /* NOTA: No sumamos sueldos extras aquí porque los L 5,000/7,000 
+       ya incluyen el costo del chofer y hotel. 
+       La utilidad simplemente será: (Total Cobrado) - (Gastos Día 1) - (Combustible).
+    */
 
     // 5. TOTALES Y UTILIDAD
+    // Redondeamos el cobro total a la centena
     const granTotalCobro = Math.round((totalKmDía1 + totalCobroDiasExtra) / 100) * 100;
-    const gastosTotales = pagoChoferTotal + viaticosChoferTotal + costoFuel;
-    const utilidadFinal = granTotalCobro - gastosTotales;
+    
+    // Los gastos reales que restamos para ver la utilidad son los del Día 1 + Combustible
+    const gastosOperativosCalculados = pagoChoferTotal + viaticosChoferTotal + costoFuel;
+    
+    // La utilidad es el gran total menos lo que gastaste en chofer/comida/diésel
+    const utilidadFinal = granTotalCobro - gastosOperativosCalculados;
 
     // 6. MOSTRAR RESULTADOS
     document.getElementById('calc-result').classList.remove('hidden');
     document.getElementById('res-total').innerText = `L ${granTotalCobro.toLocaleString('en-US')}`;
     document.getElementById('res-val-km').innerText = `L ${totalKmDía1.toLocaleString('en-US')}`;
     document.getElementById('res-val-days').innerText = `L ${totalCobroDiasExtra.toLocaleString('en-US')}`;
+    
+    // Mostramos el gasto del chofer (Solo día 1 porque el resto va en el paquete)
     document.getElementById('res-val-chofer').innerText = `L ${(pagoChoferTotal + viaticosChoferTotal).toLocaleString('en-US')}`;
     document.getElementById('res-val-fuel').innerText = `L ${costoFuel.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
     document.getElementById('res-val-utilidad').innerText = `L ${utilidadFinal.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
