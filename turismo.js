@@ -1022,54 +1022,69 @@ window.exportToExcel = () => {
 
 window.calcularTarifa = () => {
     const bus = document.getElementById('calc-bus').value;
+    const zona = document.getElementById('calc-dest').value;
     const km = parseFloat(document.getElementById('calc-km').value) || 0;
     const days = parseInt(document.getElementById('calc-days').value) || 1;
     
-    let totalKm = 0;
-    let diaExtraPrice = bus === 'hiace' ? 1500 : 2500;
-    let viaticos = (days - 1) * 500;
+    let totalKmDía1 = 0;
+    let pagoChoferTotal = 0;
+    let viaticosChoferTotal = 0;
+    let precioGalon = 105; // Precio actual aproximado
 
-    // LÓGICA DE PRECIOS SEGÚN TUS NUEVOS RANGOS
+    // 1. TARIFA DE COBRO (Recorrido Día 1)
     if (bus === 'hiace') {
-        if (km <= 30) {
-            totalKm = 1000;
-        } else if (km <= 50) {
-            totalKm = km * 30;
-        } else if (km <= 150) {
-            totalKm = km * 20;
-        } else if (km <= 300) {
-            totalKm = km * 16;
-        } else {
-            totalKm = km * 11;
-        }
-    } else { // LÓGICA COUNTY
-    
-        if (km <= 30) {
-            totalKm = 1500;
-        } else if (km <= 50) {
-            totalKm = km * 35;
-        } else if (km <= 150) {
-            totalKm = km * 30;
-        } else if (km <= 300) {
-            totalKm = km * 24;
-        } else {
-            totalKm = km * 16.50;
-        }
+        if (km <= 30) totalKmDía1 = 1000;
+        else if (km <= 50) totalKmDía1 = km * 30;
+        else if (km <= 100) totalKmDía1 = km * 20;
+        else if (km <= 300) totalKmDía1 = km * 16;
+        else totalKmDía1 = km * 11;
+    } else { // County
+        if (km <= 30) totalKmDía1 = 1500;
+        else if (km <= 50) totalKmDía1 = km * 42;
+        else if (km <= 100) totalKmDía1 = km * 32;
+        else if (km <= 300) totalKmDía1 = km * 28;
+        else totalKmDía1 = km * 16;
     }
 
-    // Cálculo de días adicionales y viáticos
-    const totalDiasExtra = (days - 1) * diaExtraPrice;
-    const granTotal = totalKm + totalDiasExtra + viaticos;
-
-    // Actualizar la interfaz
-    const resultDiv = document.getElementById('calc-result');
-    if (resultDiv) {
-        resultDiv.classList.remove('hidden');
-        document.getElementById('res-total').innerText = `L ${granTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-        document.getElementById('res-val-km').innerText = `L ${totalKm.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-        document.getElementById('res-val-days').innerText = `L ${totalDiasExtra.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-        document.getElementById('res-val-viaticos').innerText = `L ${viaticos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    // 2. PAGO DE CHOFER Y VIÁTICOS (Día 1)
+    if (zona === 'nacional') {
+        if (km <= 100) { pagoChoferTotal = 500; viaticosChoferTotal = 200; }
+        else if (km <= 500) { pagoChoferTotal = 700; viaticosChoferTotal = 300; }
+        else { pagoChoferTotal = 1000; viaticosChoferTotal = 500; }
+    } else { // Internacional (Día 1)
+        pagoChoferTotal = 1000;
+        viaticosChoferTotal = 1000;
     }
+
+    // 3. COMBUSTIBLE
+    const rendimiento = bus === 'hiace' ? 30 : 20;
+    const costoFuel = (km / rendimiento) * precioGalon;
+
+    // 4. DÍAS EXTRAS (Gastos y Cobros)
+    const cobroPaqueteExtra = zona === 'internacional' ? 7000 : 5000;
+    const totalCobroDiasExtra = (days - 1) * cobroPaqueteExtra;
+
+    // Gasto real de días extras (Chofer + Viáticos adicionales)
+    if (days > 1) {
+        const pagoDiarioExtra = zona === 'internacional' ? 1000 : 1000; // Sueldo
+        const viaticoDiarioExtra = zona === 'internacional' ? 1000 : 1500; // Hotel/Comida estimado
+        pagoChoferTotal += (days - 1) * pagoDiarioExtra;
+        viaticosChoferTotal += (days - 1) * viaticoDiarioExtra;
+    }
+
+    // 5. TOTALES Y UTILIDAD
+    const granTotalCobro = Math.round((totalKmDía1 + totalCobroDiasExtra) / 100) * 100;
+    const gastosTotales = pagoChoferTotal + viaticosChoferTotal + costoFuel;
+    const utilidadFinal = granTotalCobro - gastosTotales;
+
+    // 6. MOSTRAR RESULTADOS
+    document.getElementById('calc-result').classList.remove('hidden');
+    document.getElementById('res-total').innerText = `L ${granTotalCobro.toLocaleString('en-US')}`;
+    document.getElementById('res-val-km').innerText = `L ${totalKmDía1.toLocaleString('en-US')}`;
+    document.getElementById('res-val-days').innerText = `L ${totalCobroDiasExtra.toLocaleString('en-US')}`;
+    document.getElementById('res-val-chofer').innerText = `L ${(pagoChoferTotal + viaticosChoferTotal).toLocaleString('en-US')}`;
+    document.getElementById('res-val-fuel').innerText = `L ${costoFuel.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+    document.getElementById('res-val-utilidad').innerText = `L ${utilidadFinal.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
 };
 
 window.enviarCotizacionWhatsApp = () => {
