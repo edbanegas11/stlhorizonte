@@ -1094,6 +1094,41 @@ window.calcularTarifa = () => {
     document.getElementById('res-val-utilidad').innerText = `L ${utilidadFinal.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
 };
 
+window.generarPDF = () => {
+    const busText = document.getElementById('calc-bus').options[document.getElementById('calc-bus').selectedIndex].text;
+    const km = document.getElementById('calc-km').value;
+    const days = document.getElementById('calc-days').value;
+    const total = document.getElementById('res-total').innerText;
+    const fecha = new Date().toLocaleDateString('es-HN', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    document.getElementById('pdf-bus').innerText = busText;
+    document.getElementById('pdf-km').innerText = km + " KM";
+    document.getElementById('pdf-dias').innerText = days + " Día(s)";
+    document.getElementById('pdf-total').innerText = total;
+    document.getElementById('pdf-fecha').innerText = fecha;
+
+    const element = document.getElementById('pdf-template');
+    
+    const opt = {
+        margin: 0, 
+        filename: 'Cotizacion_STL_HORIZONTE.pdf',
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true,
+            logging: false,
+            scrollY: 0,
+            width: 800, // Forzamos el ancho del lienzo a 800px
+            windowWidth: 800 // Evitamos que tome el ancho del celular
+        },
+        jsPDF: { unit: 'pt', format: 'letter', orientation: 'portrait' }
+    };
+
+    setTimeout(() => {
+        html2pdf().set(opt).from(element).save();
+    }, 150);
+};
+
 window.enviarCotizacionWhatsApp = () => {
     const bus = document.getElementById('calc-bus').options[document.getElementById('calc-bus').selectedIndex].text;
     const km = document.getElementById('calc-km').value;
