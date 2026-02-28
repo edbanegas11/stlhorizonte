@@ -11,6 +11,9 @@
     
     <title>STL HORIZONTE | Gestión</title>
     <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script src="tu-archivo-logica.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -281,7 +284,7 @@
             <label class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-2 block">Unidad Requerida</label>
             <select id="calc-bus" class="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-blue-500/20 transition-all">
                 <option value="county">Hyundai County (24 Pasajeros)</option>
-               <option value="hiace">Toyota Hiace (14 Pasajeros)</option>
+                <option value="hiace">Toyota Hiace (14 Pasajeros)</option>
             </select>
         </div>
 
@@ -313,42 +316,50 @@
     </div>
 
     <div id="calc-result" class="hidden space-y-4 animate-fadeIn px-2">
-    <div class="bg-[#08121e] text-white p-8 rounded-[3rem] shadow-2xl relative overflow-hidden">
-        <p class="text-[10px] font-black uppercase opacity-50 tracking-[0.3em] text-center mb-2">Total Estimado</p>
-        <h3 id="res-total" class="text-4xl font-black text-center text-amber-400 tracking-tighter mb-6">L 0.00</h3>
         
-        <div class="space-y-3 border-t border-white/10 pt-6">
-            <div class="flex justify-between items-center">
-                <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest">Recorrido Base (Día 1)</span>
-                <span id="res-val-km" class="text-sm font-black text-white">L 0.00</span>
-            </div>
+        <div class="bg-[#08121e] text-white p-8 rounded-[3rem] shadow-2xl relative overflow-hidden">
+            <p class="text-[10px] font-black uppercase opacity-50 tracking-[0.3em] text-center mb-2">Total Estimado</p>
+            <h3 id="res-total" class="text-4xl font-black text-center text-amber-400 tracking-tighter mb-6">L 0.00</h3>
+            
+            <div class="space-y-3 border-t border-white/10 pt-6">
+                <div class="flex justify-between items-center">
+                    <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest">Recorrido Base (Día 1)</span>
+                    <span id="res-val-km" class="text-sm font-black text-white">L 0.00</span>
+                </div>
 
-            <div class="flex justify-between items-center">
-                <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest">Días de Espera</span>
-                <span id="res-val-days" class="text-sm font-black text-red-500">L 0.00</span>
-            </div>
-            <div class="flex justify-between items-center">
-                <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest">Pago Chofer + Viáticos</span>
-                <span id="res-val-chofer" class="text-sm font-black text-red-500">L 0.00</span>
-            </div>
-            <div class="flex justify-between items-center">
-                <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest">Costo Combustible</span>
-                <span id="res-val-fuel" class="text-sm font-black text-red-500">L 0.00</span>
-            </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest">Días de Espera</span>
+                    <span id="res-val-days" class="text-sm font-black text-white">L 0.00</span>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest">Pago Chofer + Viáticos</span>
+                    <span id="res-val-chofer" class="text-sm font-black text-red-400">L 0.00</span>
+                </div>
 
-            <div class="flex justify-between items-center mt-4 pt-4 border-t border-white/5">
-                <span class="text-[10px] font-black uppercase text-emerald-400 tracking-[0.2em] italic">Utilidades</span>
-                <span id="res-val-utilidad" class="text-lg font-black text-emerald-400">L 0.00</span>
+                <div class="flex justify-between items-center">
+                    <span class="text-[9px] font-bold uppercase text-slate-400 tracking-widest">Costo Combustible</span>
+                    <span id="res-val-fuel" class="text-sm font-black text-red-400">L 0.00</span>
+                </div>
+
+                <div class="flex justify-between items-center mt-4 pt-4 border-t border-white/5">
+                    <span class="text-[10px] font-black uppercase text-emerald-400 tracking-[0.2em] italic">Utilidades</span>
+                    <span id="res-val-utilidad" class="text-lg font-black text-emerald-400">L 0.00</span>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-</section>
-        
-        <button onclick="enviarCotizacionWhatsApp()" class="w-full bg-emerald-500 text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase text-[10px] tracking-widest">
-            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            Enviar por WhatsApp
-        </button>
+
+        <div class="flex flex-col gap-2">
+            <button onclick="enviarCotizacionWhatsApp()" class="w-full bg-emerald-500 text-white font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase text-[10px] tracking-widest">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.634 1.437h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                Enviar por WhatsApp
+            </button>
+
+            <button onclick="generarPDF()" class="w-full bg-slate-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 mt-2 uppercase text-[10px] tracking-widest">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Descargar Factura PDF
+            </button>
+        </div>
     </div>
 </section>
         </main>
@@ -425,6 +436,58 @@
     </button>
 </nav>
     </div>
+     
+    <div style="position: absolute; top: 0; left: 0; width: 800px; z-index: -1000; opacity: 0; pointer-events: none;">
+    <div id="pdf-template" style="background: white; padding: 50px; width: 800px; box-sizing: border-box;">
+        
+        <div style="border-bottom: 4px solid #08121e; padding-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="width: 65%;">
+                <h1 style="margin: 0; color: #08121e; font-family: Arial; font-size: 28px; font-weight: 900;">STL HORIZONTE</h1>
+                <p style="margin: 5px 0; font-family: Arial; font-size: 12px; color: #666; font-weight: bold;">SERVICIOS DE TRANSPORTE LOGÍSTICO Y TURISMO</p>
+            </div>
+            <div style="text-align: right; width: 35%;">
+                <h2 style="margin: 0; color: #fbbf24; font-family: Arial; font-size: 20px; font-weight: 900;">COTIZACIÓN</h2>
+                <p id="pdf-fecha" style="font-family: Arial; font-size: 12px; margin-top: 5px; color: #333; font-weight: bold;"></p>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px;">
+            <table style="width: 100%; border-collapse: collapse; font-family: Arial; table-layout: fixed;">
+                <thead>
+                    <tr style="background: #f1f5f9;">
+                        <th style="width: 60%; padding: 15px; border: 1px solid #cbd5e1; text-align: left; font-size: 14px; color: #08121e;">DESCRIPCIÓN</th>
+                        <th style="width: 40%; padding: 15px; border: 1px solid #cbd5e1; text-align: right; font-size: 14px; color: #08121e;">DETALLES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 15px; border: 1px solid #e2e8f0; font-size: 13px;">Unidad / Vehículo Seleccionado</td>
+                        <td id="pdf-bus" style="padding: 15px; border: 1px solid #e2e8f0; font-size: 13px; text-align: right; font-weight: bold; word-wrap: break-word;"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 15px; border: 1px solid #e2e8f0; font-size: 13px;">Distancia Total Estimada</td>
+                        <td id="pdf-km" style="padding: 15px; border: 1px solid #e2e8f0; font-size: 13px; text-align: right;"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 15px; border: 1px solid #e2e8f0; font-size: 13px;">Tiempo de Servicio (Días)</td>
+                        <td id="pdf-dias" style="padding: 15px; border: 1px solid #e2e8f0; font-size: 13px; text-align: right;"></td>
+                    </tr>
+                    <tr style="background: #08121e;">
+                        <td style="padding: 20px; font-weight: 900; font-size: 16px; color: white;">TOTAL NETO</td>
+                        <td id="pdf-total" style="padding: 20px; text-align: right; font-weight: 900; font-size: 24px; color: #fbbf24;"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: 60px; border-top: 1px dashed #ccc; padding-top: 20px; font-family: Arial; font-size: 11px; color: #64748b; line-height: 1.5;">
+            <p style="margin-bottom: 5px;">• Precios sujetos a cambios según disponibilidad de unidades.</p>
+            <p style="margin-bottom: 10px;">• Incluye Servicio de Transporte desde el PUNTO DE ORIGEN al PUNTO DE DESTINO y viceversa.</p>
+            <p><strong>STL HORIZONTE</strong> - Calidad y Seguridad en cada kilómetro.</p>
+        </div>
+    </div>
+</div>
+
 
     <script type="module" src="turismo.js"></script>
 </body>
