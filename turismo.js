@@ -1029,21 +1029,25 @@ window.calcularTarifa = () => {
     let totalKmDía1 = 0;
     let pagoChoferTotal = 0;
     let viaticosChoferTotal = 0;
-    let precioGalon = 105; // Precio actual aproximado
+    let precioGalon = 90; // Precio actual aproximado
 
     // 1. TARIFA DE COBRO (Recorrido Día 1)
     if (bus === 'hiace') {
         if (km <= 30) totalKmDía1 = 1000;
         else if (km <= 50) totalKmDía1 = km * 30;
         else if (km <= 100) totalKmDía1 = km * 20;
-        else if (km <= 300) totalKmDía1 = km * 16;
-        else totalKmDía1 = km * 11;
+        else if (km <= 200) totalKmDía1 = km * 16;
+        else if (km <= 300) totalKmDía1 = km * 11;
+        else if (km <= 600) totalKmDía1 = km * 11;
+        else totalKmDía1 = km * 10;
     } else { // County
         if (km <= 30) totalKmDía1 = 1500;
         else if (km <= 50) totalKmDía1 = km * 42;
         else if (km <= 100) totalKmDía1 = km * 32;
-        else if (km <= 300) totalKmDía1 = km * 28;
-        else totalKmDía1 = km * 16;
+        else if (km <= 200) totalKmDía1 = km * 28;
+        else if (km <= 300) totalKmDía1 = km * 16;
+        else if (km <= 600) totalKmDía1 = km * 16;
+        else totalKmDía1 = km * 14;
     }
 
     // 2. PAGO DE CHOFER Y VIÁTICOS (Día 1)
