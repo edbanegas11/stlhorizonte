@@ -1020,6 +1020,8 @@ window.exportToExcel = () => {
     link.click();
 };
 
+let gastosOperativosGlobal = 0;
+
 window.calcularTarifa = () => {
     const bus = document.getElementById('calc-bus').value;
     const zona = document.getElementById('calc-dest').value;
@@ -1031,7 +1033,7 @@ window.calcularTarifa = () => {
     let viaticosChoferTotal = 0;
     let precioGalon = 90; 
 
-    // 1. TARIFA DE COBRO (Recorrido Día 1 - Basado en tus rangos exactos)
+    // 1. TARIFA DE COBRO
     if (bus === 'hiace') {
         if (km <= 30) totalKmDía1 = 1000;
         else if (km <= 50) totalKmDía1 = km * 30;
@@ -1039,7 +1041,7 @@ window.calcularTarifa = () => {
         else if (km <= 200) totalKmDía1 = km * 16;
         else if (km <= 600) totalKmDía1 = km * 11;
         else totalKmDía1 = km * 10;
-    } else { // County
+    } else { 
         if (km <= 30) totalKmDía1 = 1500;
         else if (km <= 50) totalKmDía1 = km * 42;
         else if (km <= 100) totalKmDía1 = km * 32;
@@ -1048,57 +1050,73 @@ window.calcularTarifa = () => {
         else totalKmDía1 = km * 14;
     }
 
-    // 2. GASTO OPERATIVO: PAGO DE CHOFER Y VIÁTICOS (SOLO DÍA 1)
-    // Estos son los gastos fijos de salida del primer día
+    // 2. GASTOS (Chofer + Viáticos)
     if (zona === 'nacional') {
         if (km <= 100) { pagoChoferTotal = 500; viaticosChoferTotal = 200; }
         else if (km <= 500) { pagoChoferTotal = 700; viaticosChoferTotal = 300; }
         else { pagoChoferTotal = 1000; viaticosChoferTotal = 500; }
-    } else { // Internacional (Día 1)
+    } else { 
         pagoChoferTotal = 1000;
         viaticosChoferTotal = 1000;
     }
 
-    // 3. GASTO OPERATIVO: COMBUSTIBLE (Total del recorrido)
+    // 3. COMBUSTIBLE
     const rendimiento = bus === 'hiace' ? 30 : 20;
     const costoFuel = (km / rendimiento) * precioGalon;
 
-    // 4. COBRO DE DÍAS EXTRAS (Lo que el cliente paga adicional)
+    // 4. COBRO DÍAS EXTRAS
     const cobroPaqueteExtra = zona === 'internacional' ? 8000 : 5000;
     const totalCobroDiasExtra = (days - 1) * cobroPaqueteExtra;
 
-    /* NOTA: No sumamos sueldos extras aquí porque los L 5,000/7,000 
-       ya incluyen el costo del chofer y hotel. 
-       La utilidad simplemente será: (Total Cobrado) - (Gastos Día 1) - (Combustible).
-    */
-
-    // 5. TOTALES Y UTILIDAD
-    // Redondeamos el cobro total a la centena
+    // 5. CÁLCULO INICIAL
     const granTotalCobro = Math.round((totalKmDía1 + totalCobroDiasExtra) / 100) * 100;
     
-    // Los gastos reales que restamos para ver la utilidad son los del Día 1 + Combustible
-    const gastosOperativosCalculados = pagoChoferTotal + viaticosChoferTotal + costoFuel;
-    
-    // La utilidad es el gran total menos lo que gastaste en chofer/comida/diésel
-    const utilidadFinal = granTotalCobro - gastosOperativosCalculados;
+    // Guardamos los gastos en la variable global para el recálculo manual
+    gastosOperativosGlobal = pagoChoferTotal + viaticosChoferTotal + costoFuel;
 
     // 6. MOSTRAR RESULTADOS
     document.getElementById('calc-result').classList.remove('hidden');
-    document.getElementById('res-total').innerText = `L ${granTotalCobro.toLocaleString('en-US')}`;
+    
+    // Asignamos al input .value y a los textos .innerText
+    document.getElementById('res-total').value = granTotalCobro;
     document.getElementById('res-val-km').innerText = `L ${totalKmDía1.toLocaleString('en-US')}`;
     document.getElementById('res-val-days').innerText = `L ${totalCobroDiasExtra.toLocaleString('en-US')}`;
-    
-    // Mostramos el gasto del chofer (Solo día 1 porque el resto va en el paquete)
     document.getElementById('res-val-chofer').innerText = `L ${(pagoChoferTotal + viaticosChoferTotal).toLocaleString('en-US')}`;
     document.getElementById('res-val-fuel').innerText = `L ${costoFuel.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
-    document.getElementById('res-val-utilidad').innerText = `L ${utilidadFinal.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+    
+    // Llamamos a la función para que calcule la utilidad la primera vez
+    recalcularUtilidadManual();
+};
+
+// Nueva función para cuando tú modifiques el precio a mano
+window.recalcularUtilidadManual = () => {
+    const totalEditable = parseFloat(document.getElementById('res-total').value) || 0;
+    const utilidadFinal = totalEditable - gastosOperativosGlobal;
+    
+    const labelUtilidad = document.getElementById('res-val-utilidad');
+    labelUtilidad.innerText = `L ${utilidadFinal.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+    
+    // Si la utilidad es negativa, se pone en rojo
+    if(utilidadFinal < 0) {
+        labelUtilidad.classList.replace('text-emerald-400', 'text-red-400');
+    } else {
+        labelUtilidad.classList.replace('text-red-400', 'text-emerald-400');
+    }
 };
 
 window.generarPDF = () => {
     const busText = document.getElementById('calc-bus').options[document.getElementById('calc-bus').selectedIndex].text;
     const km = document.getElementById('calc-km').value;
     const days = document.getElementById('calc-days').value;
-    const total = document.getElementById('res-total').innerText;
+    
+    // CAMBIO CLAVE: .value en lugar de .innerText
+    let total = document.getElementById('res-total').value;
+    
+    // Aseguramos que el PDF muestre la "L" aunque el input solo tenga el número
+    if (!total.includes('L')) {
+        total = `L ${parseFloat(total).toLocaleString('en-US')}`;
+    }
+
     const fecha = new Date().toLocaleDateString('es-HN', { day: '2-digit', month: 'long', year: 'numeric' });
 
     document.getElementById('pdf-bus').innerText = busText;
@@ -1118,8 +1136,8 @@ window.generarPDF = () => {
             useCORS: true,
             logging: false,
             scrollY: 0,
-            width: 800, // Forzamos el ancho del lienzo a 800px
-            windowWidth: 800 // Evitamos que tome el ancho del celular
+            width: 800,
+            windowWidth: 800 
         },
         jsPDF: { unit: 'pt', format: 'letter', orientation: 'portrait' }
     };
@@ -1133,13 +1151,18 @@ window.enviarCotizacionWhatsApp = () => {
     const bus = document.getElementById('calc-bus').options[document.getElementById('calc-bus').selectedIndex].text;
     const km = document.getElementById('calc-km').value;
     const days = document.getElementById('calc-days').value;
-    const total = document.getElementById('res-total').innerText;
+    
+    // CAMBIO CLAVE: Tomar el valor del input editable
+    let total = document.getElementById('res-total').value;
+    
+    // Formatear para que se vea profesional en el mensaje
+    const totalFormat = total.includes('L') ? total : `L ${parseFloat(total).toLocaleString('en-US')}`;
 
     const mensaje = `*STL HORIZONTE - COTIZACIÓN*%0A%0A` +
                     `*Unidad:* ${bus}%0A` +
                     `*Distancia:* ${km} KM%0A` +
                     `*Duración:* ${days} Día(s)%0A%0A` +
-                    `*TOTAL ESTIMADO:* ${total}%0A%0A` +
+                    `*TOTAL ESTIMADO:* ${totalFormat}%0A%0A` +
                     `_Precios sujetos a cambios según disponibilidad._`;
 
     window.open(`https://wa.me/?text=${mensaje}`, '_blank');
