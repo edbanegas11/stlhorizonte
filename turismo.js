@@ -1031,7 +1031,7 @@ window.calcularTarifa = () => {
     let totalKmDía1 = 0;
     let pagoChoferTotal = 0;
     let viaticosChoferTotal = 0;
-    let precioGalon = 90; 
+    let precioGalon = 94; 
 
     // 1. TARIFA DE COBRO
     if (bus === 'hiace') {
@@ -1050,15 +1050,25 @@ window.calcularTarifa = () => {
         else totalKmDía1 = km * 14;
     }
 
-    // 2. GASTOS (Chofer + Viáticos)
-    if (zona === 'nacional') {
-        if (km <= 100) { pagoChoferTotal = 500; viaticosChoferTotal = 200; }
-        else if (km <= 500) { pagoChoferTotal = 700; viaticosChoferTotal = 300; }
-        else { pagoChoferTotal = 1000; viaticosChoferTotal = 500; }
-    } else { 
-        pagoChoferTotal = 1000;
-        viaticosChoferTotal = 1000;
+   // 2. GASTOS (Chofer + Viáticos)
+if (zona === 'nacional') {
+    if (km <= 30) { 
+        pagoChoferTotal = 500; 
+        viaticosChoferTotal = 200; // Mantuve un valor de viáticos, ajústalo si es necesario
+    } 
+    else if (km <= 350) { 
+        pagoChoferTotal = 700; 
+        viaticosChoferTotal = 300; 
+    } 
+    else { 
+        pagoChoferTotal = 1000; 
+        viaticosChoferTotal = 300; 
     }
+} else { 
+    // Zona Internacional/Especial
+    pagoChoferTotal = 1000;
+    viaticosChoferTotal = 1000;
+}
 
     // 3. COMBUSTIBLE
     const rendimiento = bus === 'hiace' ? 30 : 20;
