@@ -35,6 +35,13 @@ let reportSubView = 'income';
 let unidadesConfig = ['Hyundai County', 'Toyota Hiace'];
 let catEgresos = ['Combustible', 'Sueldos y Viáticos', 'Repuestos', 'Mantenimiento', 'Gastos de Operaciones'];
 let catIngresos = []; // Valores por defecto
+// 1. Inicialización de datos (Carga lo que ya existe o empieza en 0)
+let capitalData = {
+    emergencia: 0,
+    utilidad: 0
+};
+
+
 
 const getFilteredTransactions = () => {
     const filterValue = document.getElementById('global-filter')?.value || 'all';
@@ -302,31 +309,10 @@ window.updateTransactionFirebase = async () => {
         alert("Error: " + e.message);
     }
 };
-
-// --- FUNCIÓN PARA LLENAR LOS SELECTS DE UNIDADES ---
-window.fillUnitSelects = () => {
-    // Buscamos los selectores en el HTML (asegúrate de que los IDs coincidan)
-    const unitSelect = document.getElementById('trans-unit');
-    
-    // Si no existen en la vista actual, salimos de la función
-    if (!unitSelect) return;
-
-    // Limpiamos las opciones actuales y ponemos una por defecto
-    unitSelect.innerHTML = '<option value="" disabled selected>Seleccionar Unidad</option>';
-
-    // Recorremos el array de unidadesConfig (que tienes al inicio de tu JS)
-    unidadesConfig.forEach(unidad => {
-        const option = document.createElement('option');
-        option.value = unidad;
-        option.textContent = unidad;
-        unitSelect.appendChild(option);
-    });
-};
-
 // --- 1. NAVEGACIÓN ENTRE VISTAS ---
 window.showView = (viewName) => {
-    // 1. Ocultar todas las secciones
-    const views = ['dashboard', 'income', 'expense', 'history', 'settings'];
+    // 1. Ocultar todas las secciones (Incluyendo capital)
+    const views = ['dashboard', 'income', 'expense', 'history', 'settings', 'calculator', 'capital'];
     views.forEach(v => {
         const section = document.getElementById(`view-${v}`);
         if (section) section.classList.add('hidden');
@@ -339,23 +325,25 @@ window.showView = (viewName) => {
         window.scrollTo(0, 0);
     }
 
-    // 3. ACTUALIZAR COLORES DE LA BARRA DE NAVEGACIÓN (Diseño Horizonte)
+    // 3. ACTUALIZAR COLORES DE LA BARRA DE NAVEGACIÓN
+    // AGREGAMOS 'capital': 'nav-capital' al mapeo
     const navButtons = {
         'dashboard': 'nav-home',
         'history': 'nav-reports',
-        'settings': 'nav-settings'
+        'calculator': 'nav-calc',
+        'settings': 'nav-settings',
+        'capital': 'nav-capital' // <--- ESTO ACTIVA EL COLOR AMARILLO
     };
   
-  // Dentro de window.showView para 'income' o 'expense'
-const hoy = new Date().toISOString().split('T')[0];
-if (document.getElementById('in-date')) document.getElementById('in-date').value = hoy;
-if (document.getElementById('ex-date')) document.getElementById('ex-date').value = hoy;
+    // Resetear fechas en formularios
+    const hoy = new Date().toISOString().split('T')[0];
+    if (document.getElementById('in-date')) document.getElementById('in-date').value = hoy;
+    if (document.getElementById('ex-date')) document.getElementById('ex-date').value = hoy;
 
-    // Primero: Apagamos todos los botones (Gris Slate y opacidad baja)
+    // Primero: Apagamos todos los botones
     Object.values(navButtons).forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
-            // Quitamos opacidad total y ponemos opacidad baja
             btn.classList.remove('opacity-100');
             btn.classList.add('opacity-40');
             
@@ -363,69 +351,49 @@ if (document.getElementById('ex-date')) document.getElementById('ex-date').value
             const span = btn.querySelector('span');
 
             if (svg) {
-                // Quitamos el color naranja y el brillo de todos
-                svg.classList.remove('text-indigo-300/90');
+                svg.classList.remove('text-amber-400');
                 svg.classList.add('text-slate-400');
-                svg.style.color = ''; // Borra el naranja manual
-                svg.style.filter = 'none'; // Borra el brillo manual
+                svg.style.color = ''; 
+                svg.style.filter = 'none';
             }
             if (span) {
-                span.classList.remove('text-indigo-300/90');
+                span.classList.remove('text-amber-400');
                 span.classList.add('text-slate-400');
-                span.style.color = ''; // Borra el naranja manual
+                span.style.color = '';
             }
         }
     });
 
-    // Segundo: Encendemos el botón activo (Verde Esmeralda y opacidad total)
+    // Segundo: Encendemos el botón activo (Efecto Ámbar con Brillo)
     const activeId = navButtons[viewName];
     if (activeId) {
         const activeBtn = document.getElementById(activeId);
-        activeBtn.classList.remove('opacity-40');
-        activeBtn.classList.add('opacity-100');
-        
-        const icon = activeBtn.querySelector('svg');
-        const text = activeBtn.querySelector('span');
-        
-        if (icon) {
-            icon.classList.remove('text-slate-400');
-            icon.classList.add('text-indigo-300/90');
-            // Aplicamos el color naranja directamente por si Tailwind tiene conflictos
-            icon.style.color = '#a5b4fc'; 
-            icon.style.filter = 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.5))';
-        }
-        if (text) {
-            text.classList.remove('text-slate-400');
-            text.classList.add('text-indigo-300/90');
-            text.style.color = '#a5b4fc';
+        if (activeBtn) {
+            activeBtn.classList.remove('opacity-40');
+            activeBtn.classList.add('opacity-100');
+            
+            const icon = activeBtn.querySelector('svg');
+            const text = activeBtn.querySelector('span');
+            
+            if (icon) {
+                icon.classList.remove('text-slate-400');
+                icon.classList.add('text-amber-400');
+                icon.style.color = '#fbbf24'; 
+                icon.style.filter = 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.5))';
+            }
+            if (text) {
+                text.classList.remove('text-slate-400');
+                text.classList.add('text-amber-400');
+                text.style.color = '#fbbf24';
+            }
         }
     }
 
     // --- 4. LÓGICA DE CARGA DE DATOS ---
+    if (viewName === 'dashboard') renderDashboard();
     if (viewName === 'history') renderHistory();
-    if (viewName === 'settings') renderSettings();
-    
-    if (viewName === 'expense') {
-        prepararVistaGastos();
-        // CORRECCIÓN: Agregamos la validación para que no dé error si no existe
-        if (typeof fillUnitSelects === 'function') {
-            fillUnitSelects();
-        } else {
-            console.warn("La función fillUnitSelects no está definida aún.");
-        }
-    }
-    
-    if (viewName === 'income') {
-        // Esta parte ya la tenías bien protegida
-        if (typeof fillUnitSelects === 'function') fillUnitSelects();
-        
-        const inAmount = document.getElementById('in-amount');
-        if (inAmount) inAmount.value = '';
-        
-        const inUnit = document.getElementById('in-unit');
-        const inCat = document.getElementById('in-category');
-        if (inUnit) inUnit.selectedIndex = 0;
-        if (inCat) inCat.selectedIndex = 0;
+    if (viewName === 'capital') {
+        if (typeof actualizarUI === 'function') actualizarUI();
     }
 };
 
@@ -448,7 +416,6 @@ window.setReportSubView = (type) => {
 };
 
 // --- 2. RENDERIZADO DEL DASHBOARD (INICIO) ---
-// --- RENDERIZADO DEL DASHBOARD ACTUALIZADO ---
 window.renderDashboard = () => {
     const listaTransacciones = document.getElementById('lista-transacciones');
     const balanceTotal = document.getElementById('balance-total');
@@ -458,30 +425,34 @@ window.renderDashboard = () => {
     
     if (!listaTransacciones) return;
 
-    // --- FILTRADO DE DATA ---
+    // 1. FILTRADO POR PERIODO
     const dataFiltrada = localTransactions.filter(t => {
         if (filtro === 'all') return true;
         return t.date && t.date.startsWith(filtro);
     });
 
-    let totalGeneral = 0;
     let sumaIngresos = 0;
     let sumaGastos = 0;
+    let sumaCapital = 0;
 
-    // 1. Procesamos totales sobre la DATA FILTRADA
+    // 2. PROCESAMIENTO DE TOTALES (Lógica matemática)
     dataFiltrada.forEach((t) => {
         const monto = parseFloat(t.amount) || 0;
         if (t.type === 'income') {
             sumaIngresos += monto;
-            totalGeneral += monto;
-        } else {
+        } else if (t.type === 'expense') {
             sumaGastos += monto;
-            totalGeneral -= monto;
+        } else if (t.type === 'capital_transfer') {
+            sumaCapital += monto; 
         }
     });
 
-    // 2. Ordenamos por FECHA y tomamos los 10 más actuales del periodo filtrado
+    const totalGeneral = sumaIngresos - sumaGastos - sumaCapital;
+
+    // 3. ORDENAMIENTO Y EXCLUSIÓN VISUAL
+    // Filtramos para que NO aparezcan los 'capital_transfer' en la lista del Dashboard
     const recientes = [...dataFiltrada]
+        .filter(t => t.type !== 'capital_transfer') 
         .sort((a, b) => {
             const dateA = new Date((a.date || "2000-01-01") + 'T00:00:00').getTime();
             const dateB = new Date((b.date || "2000-01-01") + 'T00:00:00').getTime();
@@ -492,7 +463,7 @@ window.renderDashboard = () => {
         })
         .slice(0, 10);
 
-    // 3. Generamos el HTML
+    // 4. GENERACIÓN DE HTML
     let html = '';
     recientes.forEach((t) => {
         const isInc = t.type === 'income';
@@ -502,7 +473,7 @@ window.renderDashboard = () => {
         const displayDate = t.date ? dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'}) : 'S/F';
 
         html += `
-            <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-1 mb-2 active:scale-[0.98] transition-transform">
+            <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-1 mb-2">
                 <div class="flex flex-col min-w-0 flex-1 pr-3">
                     <p class="text-[11px] font-black text-slate-800 uppercase italic truncate leading-none mb-1">${mainText}</p>
                     <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1">
@@ -519,52 +490,65 @@ window.renderDashboard = () => {
             </div>`;
     });
 
-    listaTransacciones.innerHTML = html || `<p class="text-center py-10 text-slate-400 text-[10px] font-black uppercase">Sin movimientos en este periodo</p>`;
-    
+    listaTransacciones.innerHTML = html || `<p class="text-center py-10 text-slate-400 text-[10px] font-black uppercase">Sin movimientos</p>`;
+
     if (balanceTotal) balanceTotal.innerText = `L ${totalGeneral.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     if (dashIn) dashIn.innerText = `L ${sumaIngresos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     if (dashOut) dashOut.innerText = `L ${sumaGastos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+  
+  // ... dentro de renderDashboard al final ...
+
+if (dashIn) dashIn.innerText = `L ${sumaIngresos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+if (dashOut) dashOut.innerText = `L ${sumaGastos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+// NUEVA LÓGICA PARA LA CASILLA VERDE:
+const utilidadCalculada = sumaIngresos - sumaGastos;
+const dashUtil = document.getElementById('dash-utilidad');
+if (dashUtil) {
+    dashUtil.innerText = `L ${utilidadCalculada.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
 }
+  
+};
 
 // --- 3. RENDERIZADO DE HISTORIAL AGRUPADO ---
 window.renderHistory = function() {
     const container = document.getElementById('historial-agrupado');
     const reportBalance = document.getElementById('report-balance-caja');
-    
-    // IDs de los montos en los botones (asegúrate de que coincidan con el HTML)
     const tabIn = document.getElementById('tab-total-in');
     const tabOut = document.getElementById('tab-total-out');
-    
     const filtro = document.getElementById('global-filter')?.value || 'all';
+    
     if (!container) return;
 
-    // 1. FILTRADO INICIAL: Periodo Global
+    // 1. FILTRADO POR PERIODO
     const dataFiltradaPeriodo = localTransactions.filter(t => {
         if (filtro === 'all') return true;
         return t.date && t.date.startsWith(filtro);
     });
 
-    // 2. Cálculo de Totales para Botones y Balance
+    // 2. CÁLCULO DE TOTALES (Incluyendo Capital para el Balance neto)
     let sumaIn = 0;
     let sumaOut = 0;
+    let sumaCap = 0;
 
     dataFiltradaPeriodo.forEach(t => {
         const amt = parseFloat(t.amount) || 0;
         if (t.type === 'income') sumaIn += amt;
-        else sumaOut += amt;
+        else if (t.type === 'expense') sumaOut += amt;
+        else if (t.type === 'capital_transfer') sumaCap += amt;
     });
 
-    // 3. Insertar montos en los botones de la subvista
     if (tabIn) tabIn.innerText = `L ${sumaIn.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     if (tabOut) tabOut.innerText = `L ${sumaOut.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
 
-    // 4. Balance del periodo filtrado
-    let balanceTotal = sumaIn - sumaOut;
+    // El Balance muestra lo que realmente queda en caja (Ingresos - Gastos - Lo movido a Capital)
+    let balanceTotal = sumaIn - sumaOut - sumaCap;
     if (reportBalance) {
         reportBalance.innerText = `L ${balanceTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
     }
 
-    // 5. Filtrado por tipo (Ingreso/Gasto) para la lista visual
+    // 3. FILTRADO VISUAL POR SUBVISTA (Ingreso o Gasto)
+    // Esto garantiza que 'capital_transfer' NO aparezca aquí porque reportSubView solo es 'income' o 'expense'
     const filteredByType = dataFiltradaPeriodo.filter(t => t.type === reportSubView);
     const groups = {};
 
@@ -586,7 +570,7 @@ window.renderHistory = function() {
         html += `
             <div class="flex items-center gap-4 my-8 px-2">
                 <div class="h-[1px] flex-1 bg-slate-200"></div>
-                <span class="text-2xl font-black text-slate-300 italic tracking-tighter">${year}</span>
+                <span class="text-2xl font-black text-slate-300 italic">${year}</span>
                 <div class="h-[1px] flex-1 bg-slate-200"></div>
             </div>`;
         
@@ -594,7 +578,7 @@ window.renderHistory = function() {
         const sortedMonths = Object.keys(groups[year]).sort((a, b) => mesesNombres.indexOf(b) - mesesNombres.indexOf(a));
 
         sortedMonths.forEach(month => {
-            html += `<h3 class="text-[10px] font-black uppercase text-slate-400 ml-4 border-l-4 border-blue-500 pl-3 italic mb-4 tracking-[0.2em]">${month}</h3><div class="space-y-3 mb-10">`;
+            html += `<h3 class="text-[10px] font-black uppercase text-slate-400 ml-4 border-l-4 border-blue-500 pl-3 italic mb-4">${month}</h3><div class="space-y-3 mb-10">`;
             
             groups[year][month].sort((a, b) => b.dateObj - a.dateObj).forEach(t => {
                 const isInc = t.type === 'income';
@@ -603,13 +587,11 @@ window.renderHistory = function() {
                     <div class="flex flex-col min-w-0 flex-1 pr-3">
                         <p class="text-[11px] font-black text-slate-800 uppercase italic truncate mb-1">${t.description || t.category}</p>
                         <p class="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                            <span class="${isInc ? 'text-green-500' : 'text-red-500'} font-black">${t.category}</span> 
-                            <span class="text-slate-300">•</span> 
-                            <span class="text-blue-500 font-black">${t.unit || 'S/U'}</span>
+                            <span class="${isInc ? 'text-green-500' : 'text-red-500'} font-black">${t.category}</span> • ${t.unit || 'S/U'}
                         </p>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <div class="text-right">
+                    <div class="text-right flex items-center gap-3">
+                        <div>
                             <p class="font-black text-sm ${isInc ? 'text-green-600' : 'text-red-600'}">L ${parseFloat(t.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
                             <p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${t.dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'})}</p>
                         </div>
@@ -624,10 +606,9 @@ window.renderHistory = function() {
         });
     });
 
-    container.innerHTML = html || '<p class="text-center py-20 text-slate-400 font-bold uppercase text-[10px]">No hay registros en este periodo</p>';
+    container.innerHTML = html || '<p class="text-center py-20 text-slate-400 font-bold uppercase text-[10px]">No hay registros</p>';
     if (typeof renderReportBreakdown === 'function') renderReportBreakdown();
-}
-
+};
 
 // --- AÑADIR NUEVA UNIDAD ---
 window.addUnit = async () => {
@@ -693,6 +674,100 @@ async function loadConfig() {
     updateSelects();
     renderSettings();
 }
+
+// --- GESTIÓN DE CAPITAL ---
+
+// Cargar saldos de capital desde Firebase
+async function loadCapital() {
+    const docRef = doc(db, 'usuarios', USER_ID, 'config', 'capital');
+    try {
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+            capitalData = snap.data();
+        }
+        actualizarUI();
+    } catch (e) {
+        console.error("Error cargando capital:", e);
+    }
+}
+
+// Función para actualizar los textos en el HTML
+function actualizarUI() {
+    const elEmergencia = document.getElementById('cap-emergencia');
+    const elUtilidad = document.getElementById('cap-utilidad');
+    
+    if (elEmergencia) elEmergencia.innerText = `L ${capitalData.emergencia.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    if (elUtilidad) elUtilidad.innerText = `L ${capitalData.utilidad.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+}
+
+// Función que ejecutan tus botones del HTML
+window.distribuirCapital = async (destino) => {
+    const inputAmount = document.getElementById('move-amount');
+    const filterSelect = document.getElementById('global-filter'); // Capturamos el filtro
+    const monto = parseFloat(inputAmount.value);
+
+    // 1. Validaciones
+    if (isNaN(monto) || monto <= 0) {
+        return alert("⚠️ Ingresa un monto válido");
+    }
+
+    // Calculamos el balance actual basándonos en los filtros aplicados actualmente
+    let sumaIn = 0;
+    let sumaOut = 0;
+    let sumaCapital = 0;
+
+    localTransactions.forEach(t => {
+        const amt = parseFloat(t.amount) || 0;
+        if (t.type === 'income') sumaIn += amt;
+        else if (t.type === 'expense') sumaOut += amt;
+        else if (t.type === 'capital_transfer') sumaCapital += amt;
+    });
+
+    const balanceDisponible = sumaIn - sumaOut - sumaCapital;
+
+    if (monto > balanceDisponible) {
+        return alert(`❌ Saldo insuficiente en este periodo. Disponible: L ${balanceDisponible.toLocaleString()}`);
+    }
+
+    // 2. Determinar la fecha del movimiento
+    // Si hay un mes seleccionado (YYYY-MM), usamos el primer día de ese mes.
+    // Si no, usamos la fecha de hoy.
+    let fechaDestino = new Date().toISOString().split('T')[0];
+    if (filterSelect && filterSelect.value !== 'all' && filterSelect.value.length === 7) {
+        fechaDestino = `${filterSelect.value}-01`; 
+    }
+
+    try {
+        // 3. Crear el movimiento especial (NO es expense)
+        // Al ser 'capital_transfer' no se mezclará con tus gastos operativos
+        await addDoc(collection(db, 'usuarios', USER_ID, 'movimientos'), {
+            type: 'capital_transfer', 
+            description: `TRASPASO A ${destino.toUpperCase()}`,
+            amount: monto,
+            category: 'Capital',
+            unit: 'S/U',
+            date: fechaDestino, 
+            createdAt: serverTimestamp()
+        });
+
+        // 4. Actualizar los saldos acumulados de capital
+        capitalData[destino] = (capitalData[destino] || 0) + monto;
+        const docRef = doc(db, 'usuarios', USER_ID, 'config', 'capital');
+        await setDoc(docRef, capitalData);
+
+        // 5. Limpieza y Feedback
+        inputAmount.value = "";
+        actualizarUI(); // Refresca los cuadritos de Emergencia/Utilidad
+        alert(`✅ Fondos movidos a ${destino}. El balance de este periodo ha sido actualizado.`);
+        
+        // El onSnapshot de Firebase se encargará de llamar a renderDashboard() 
+        // automáticamente al detectar el nuevo movimiento.
+
+    } catch (e) {
+        console.error("Error en traspaso:", e);
+        alert("Ocurrió un error al procesar el movimiento");
+    }
+};
 
 function renderSettings() {
     const unitList = document.getElementById('lista-unidades-ajustes');
@@ -1070,6 +1145,164 @@ window.exportToExcel = () => {
     link.click();
 };
 
+let gastosOperativosGlobal = 0;
+
+window.calcularTarifa = () => {
+    const bus = document.getElementById('calc-bus').value;
+    const zona = document.getElementById('calc-dest').value;
+    const km = parseFloat(document.getElementById('calc-km').value) || 0;
+    const days = parseInt(document.getElementById('calc-days').value) || 1;
+    
+    let totalKmDía1 = 0;
+    let pagoChoferTotal = 0;
+    let viaticosChoferTotal = 0;
+    let precioGalon = 94; 
+
+    // 1. TARIFA DE COBRO
+    if (bus === 'hiace') {
+        if (km <= 30) totalKmDía1 = 1000;
+        else if (km <= 50) totalKmDía1 = km * 30;
+        else if (km <= 100) totalKmDía1 = km * 20;
+        else if (km <= 200) totalKmDía1 = km * 16;
+        else if (km <= 600) totalKmDía1 = km * 11;
+        else totalKmDía1 = km * 10;
+    } else { 
+        if (km <= 30) totalKmDía1 = 1500;
+        else if (km <= 50) totalKmDía1 = km * 42;
+        else if (km <= 100) totalKmDía1 = km * 32;
+        else if (km <= 200) totalKmDía1 = km * 28;
+        else if (km <= 600) totalKmDía1 = km * 16;
+        else totalKmDía1 = km * 14;
+    }
+
+   // 2. GASTOS (Chofer + Viáticos)
+if (zona === 'nacional') {
+    if (km <= 30) { 
+        pagoChoferTotal = 500; 
+        viaticosChoferTotal = 200; // Mantuve un valor de viáticos, ajústalo si es necesario
+    } 
+    else if (km <= 350) { 
+        pagoChoferTotal = 700; 
+        viaticosChoferTotal = 300; 
+    } 
+    else { 
+        pagoChoferTotal = 1000; 
+        viaticosChoferTotal = 300; 
+    }
+} else { 
+    // Zona Internacional/Especial
+    pagoChoferTotal = 1000;
+    viaticosChoferTotal = 1000;
+}
+
+    // 3. COMBUSTIBLE
+    const rendimiento = bus === 'hiace' ? 30 : 20;
+    const costoFuel = (km / rendimiento) * precioGalon;
+
+    // 4. COBRO DÍAS EXTRAS
+    const cobroPaqueteExtra = zona === 'internacional' ? 8000 : 5000;
+    const totalCobroDiasExtra = (days - 1) * cobroPaqueteExtra;
+
+    // 5. CÁLCULO INICIAL
+    const granTotalCobro = Math.round((totalKmDía1 + totalCobroDiasExtra) / 100) * 100;
+    
+    // Guardamos los gastos en la variable global para el recálculo manual
+    gastosOperativosGlobal = pagoChoferTotal + viaticosChoferTotal + costoFuel;
+
+    // 6. MOSTRAR RESULTADOS
+    document.getElementById('calc-result').classList.remove('hidden');
+    
+    // Asignamos al input .value y a los textos .innerText
+    document.getElementById('res-total').value = granTotalCobro;
+    document.getElementById('res-val-km').innerText = `L ${totalKmDía1.toLocaleString('en-US')}`;
+    document.getElementById('res-val-days').innerText = `L ${totalCobroDiasExtra.toLocaleString('en-US')}`;
+    document.getElementById('res-val-chofer').innerText = `L ${(pagoChoferTotal + viaticosChoferTotal).toLocaleString('en-US')}`;
+    document.getElementById('res-val-fuel').innerText = `L ${costoFuel.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+    
+    // Llamamos a la función para que calcule la utilidad la primera vez
+    recalcularUtilidadManual();
+};
+
+// Nueva función para cuando tú modifiques el precio a mano
+window.recalcularUtilidadManual = () => {
+    const totalEditable = parseFloat(document.getElementById('res-total').value) || 0;
+    const utilidadFinal = totalEditable - gastosOperativosGlobal;
+    
+    const labelUtilidad = document.getElementById('res-val-utilidad');
+    labelUtilidad.innerText = `L ${utilidadFinal.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+    
+    // Si la utilidad es negativa, se pone en rojo
+    if(utilidadFinal < 0) {
+        labelUtilidad.classList.replace('text-emerald-400', 'text-red-400');
+    } else {
+        labelUtilidad.classList.replace('text-red-400', 'text-emerald-400');
+    }
+};
+
+window.generarPDF = () => {
+    const busText = document.getElementById('calc-bus').options[document.getElementById('calc-bus').selectedIndex].text;
+    const km = document.getElementById('calc-km').value;
+    const days = document.getElementById('calc-days').value;
+    
+    // CAMBIO CLAVE: .value en lugar de .innerText
+    let total = document.getElementById('res-total').value;
+    
+    // Aseguramos que el PDF muestre la "L" aunque el input solo tenga el número
+    if (!total.includes('L')) {
+        total = `L ${parseFloat(total).toLocaleString('en-US')}`;
+    }
+
+    const fecha = new Date().toLocaleDateString('es-HN', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    document.getElementById('pdf-bus').innerText = busText;
+    document.getElementById('pdf-km').innerText = km + " KM";
+    document.getElementById('pdf-dias').innerText = days + " Día(s)";
+    document.getElementById('pdf-total').innerText = total;
+    document.getElementById('pdf-fecha').innerText = fecha;
+
+    const element = document.getElementById('pdf-template');
+    
+    const opt = {
+        margin: 0, 
+        filename: 'Cotizacion_STL_HORIZONTE.pdf',
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true,
+            logging: false,
+            scrollY: 0,
+            width: 800,
+            windowWidth: 800 
+        },
+        jsPDF: { unit: 'pt', format: 'letter', orientation: 'portrait' }
+    };
+
+    setTimeout(() => {
+        html2pdf().set(opt).from(element).save();
+    }, 150);
+};
+
+window.enviarCotizacionWhatsApp = () => {
+    const bus = document.getElementById('calc-bus').options[document.getElementById('calc-bus').selectedIndex].text;
+    const km = document.getElementById('calc-km').value;
+    const days = document.getElementById('calc-days').value;
+    
+    // CAMBIO CLAVE: Tomar el valor del input editable
+    let total = document.getElementById('res-total').value;
+    
+    // Formatear para que se vea profesional en el mensaje
+    const totalFormat = total.includes('L') ? total : `L ${parseFloat(total).toLocaleString('en-US')}`;
+
+    const mensaje = `*STL HORIZONTE - COTIZACIÓN*%0A%0A` +
+                    `*Unidad:* ${bus}%0A` +
+                    `*Distancia:* ${km} KM%0A` +
+                    `*Duración:* ${days} Día(s)%0A%0A` +
+                    `*TOTAL ESTIMADO:* ${totalFormat}%0A%0A` +
+                    `_Precios sujetos a cambios según disponibilidad._`;
+
+    window.open(`https://wa.me/?text=${mensaje}`, '_blank');
+};
+
 // --- 7. LISTENERS TIEMPO REAL ---
 const q = query(collection(db, 'usuarios', USER_ID, 'movimientos'), orderBy('createdAt', 'desc'));
 
@@ -1085,7 +1318,11 @@ onSnapshot(q, (snapshot) => {
     // 2. Luego dibujamos todo lo demás
     renderDashboard();
     if (typeof renderHistory === 'function') renderHistory();
-  
+});
+
+// Modifica tu función de carga inicial o añade esto al final del archivo
+document.addEventListener('DOMContentLoaded', () => {
+    loadCapital();
 });
 
 // Inicializar
