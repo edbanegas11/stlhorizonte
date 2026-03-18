@@ -65,14 +65,12 @@
 </header>
          
  <div class="grid grid-cols-2 gap-4">
-                    <button onclick="showView('income')" class="bg-blue-500 hover:bg-blue-600 text-white p-5 rounded-3xl shadow-lg shadow-blue-200 active:scale-95 transition-all flex flex-col items-center gap-2 group">
-    <div class="bg-white/20 p-2 rounded-xl group-hover:rotate-12 transition-transform">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 5v14M5 12h14"/>
-        </svg>
-    </div>
-    <span class="text-[11px] font-black uppercase tracking-wider">Ingreso</span>
-</button>
+                    <button onclick="showView('income')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-5 rounded-3xl shadow-lg shadow-emerald-200 active:scale-95 transition-all flex flex-col items-center gap-2 group">
+                        <div class="bg-white/20 p-2 rounded-xl group-hover:rotate-12 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                        </div>
+                        <span class="text-[11px] font-black uppercase tracking-wider">Ingreso</span>
+                    </button>
                     
                     <button onclick="showView('expense')" class="bg-rose-400 text-slate-900 p-5 rounded-3xl shadow-xl border border-slate-100 active:scale-95 transition-all flex flex-col items-center gap-2 group">
                         <div class="bg-rose-600 text-white p-2 rounded-xl group-hover:-rotate-12 transition-transform">
@@ -82,20 +80,20 @@
                     </button>
                 </div>
 
-                <div class="bg-white rounded-[2rem] p-2 flex gap-2 border border-slate-100 card-shadow">
-    <div class="flex-1 bg-blue-50/50 p-3 rounded-[1.5rem] border border-blue-100/50">
+                <div class="bg-white rounded-[2rem] p-2 grid grid-cols-3 gap-2 border border-slate-100 card-shadow">
+    <div class="bg-blue-50 p-3 rounded-[1.5rem] border border-blue-100 text-center">
         <p class="text-[7px] font-black uppercase text-blue-400 mb-1">Entradas</p>
         <p id="dash-total-in" class="text-[13px] font-black text-blue-600 tracking-tighter">L 0.00</p>
     </div>
-
-    <div class="flex-1 bg-rose-50/50 p-3 rounded-[1.5rem] border border-rose-100/50">
+    
+    <div class="bg-rose-50 p-3 rounded-[1.5rem] border border-rose-100 text-center">
         <p class="text-[7px] font-black uppercase text-rose-400 mb-1">Salidas</p>
         <p id="dash-total-out" class="text-[13px] font-black text-rose-600 tracking-tighter">L 0.00</p>
     </div>
 
-    <div class="flex-1 bg-emerald-50/50 p-3 rounded-[1.5rem] border border-emerald-100/50">
+    <div class="bg-emerald-50 p-3 rounded-[1.5rem] border border-emerald-100 text-center">
         <p class="text-[7px] font-black uppercase text-emerald-400 mb-1">Utilidad</p>
-        <p id="dash-utilidad" class="text-[13px] font-black text-emerald-600 tracking-tighter">L 0.00</p>
+        <p id="dash-total-util" class="text-[13px] font-black text-emerald-600 tracking-tighter">L 0.00</p>
     </div>
 </div>
 
@@ -108,6 +106,7 @@
                         </div>
                 </div>
             </section>
+
 
             <section id="view-income" class="hidden bg-white p-8 rounded-[3rem] shadow-2xl space-y-6">
     <h2 class="text-lg font-black text-green-600 uppercase italic">Nuevo Ingreso</h2>
@@ -179,33 +178,64 @@
 </section>
           
           <section id="view-capital" class="hidden space-y-6 pb-20">
+
     <header class="mt-4 bg-[#08121e] rounded-[1.5rem] p-5 text-white shadow-2xl">
+
         <h2 class="text-[14px] font-black uppercase tracking-widest text-amber-400">Gestión de Capital</h2>
+
         <p class="text-[9px] text-slate-400 font-bold uppercase">Distribución de Utilidades y Reservas</p>
+
     </header>
 
+
+
     <div class="grid grid-cols-2 gap-4">
+
+        
+
         <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 text-center">
-            <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Fondo Emergencia</p>
-            <p id="cap-emergencia" class="text-lg font-black text-blue-600">L 0.00</p>
-        </div>
-        <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 text-center">
+
             <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Utilidad Neta</p>
+
             <p id="cap-utilidad" class="text-lg font-black text-emerald-600">L 0.00</p>
+
         </div>
+      
+      <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 text-center">
+
+            <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Fondo Emergencia</p>
+
+            <p id="cap-emergencia" class="text-lg font-black text-blue-600">L 0.00</p>
+
+        </div>
+
     </div>
 
+
+
     <div class="bg-white p-6 rounded-[2.5rem] shadow-xl space-y-4">
+
         <h3 class="text-[10px] font-black uppercase text-slate-800 italic">Mover Saldo Operativo</h3>
+
         <input type="number" id="move-amount" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none" placeholder="0.00">
+
         
+
         <div class="grid grid-cols-2 gap-2">
-            <button onclick="distribuirCapital('emergencia')" class="bg-blue-600 text-white p-3 rounded-xl font-black text-[10px] uppercase">A Emergencias</button>
+
+           
+
             <button onclick="distribuirCapital('utilidad')" class="bg-emerald-600 text-white p-3 rounded-xl font-black text-[10px] uppercase">A Utilidad Neta</button>
+          
+           <button onclick="distribuirCapital('emergencia')" class="bg-blue-600 text-white p-3 rounded-xl font-black text-[10px] uppercase">A Emergencias</button>
+
         </div>
+
         <p class="text-[8px] text-slate-400 text-center italic">Esto restará del balance mensual y lo guardará en tu capital.</p>
+
     </div>
-</section>
+
+</section> 
 
             <section id="view-history" class="hidden mt-8 space-y-6 pb-10">
     <header class="mt-4 relative overflow-hidden bg-[#08121e] rounded-[1.5rem] p-4 text-white shadow-2xl border border-slate-800/50">
@@ -259,8 +289,6 @@
 
     <div id="historial-agrupado" class="space-y-8 px-2"></div>
 </section>
-          
-          
      
             <section id="view-settings" class="hidden mt-8 space-y-6 pb-10">
                 <header class="mt-4 relative overflow-hidden bg-[#08121e] rounded-[1.5rem] p-4 text-white shadow-2xl border border-slate-800/50">
