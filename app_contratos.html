@@ -175,35 +175,66 @@
     </div>
 </section>
           
-          <section id="view-capital" class="hidden space-y-6 pb-20">
+         
+ <section id="view-capital" class="hidden space-y-6 pb-20">
+
     <header class="mt-4 bg-[#08121e] rounded-[1.5rem] p-5 text-white shadow-2xl">
+
         <h2 class="text-[14px] font-black uppercase tracking-widest text-amber-400">Gestión de Capital</h2>
+
         <p class="text-[9px] text-slate-400 font-bold uppercase">Distribución de Utilidades y Reservas</p>
+
     </header>
 
+
+
     <div class="grid grid-cols-2 gap-4">
+
+        
+
         <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 text-center">
-            <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Fondo Emergencia</p>
-            <p id="cap-emergencia" class="text-lg font-black text-blue-600">L 0.00</p>
-        </div>
-        <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 text-center">
+
             <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Utilidad Neta</p>
+
             <p id="cap-utilidad" class="text-lg font-black text-emerald-600">L 0.00</p>
+
         </div>
+      
+      <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 text-center">
+
+            <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Fondo Emergencia</p>
+
+            <p id="cap-emergencia" class="text-lg font-black text-blue-600">L 0.00</p>
+
+        </div>
+
     </div>
+
+
 
     <div class="bg-white p-6 rounded-[2.5rem] shadow-xl space-y-4">
-        <h3 class="text-[10px] font-black uppercase text-slate-800 italic">Mover Saldo Operativo</h3>
-        <input type="number" id="move-amount" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none" placeholder="0.00">
-        
-        <div class="grid grid-cols-2 gap-2">
-            <button onclick="distribuirCapital('emergencia')" class="bg-blue-600 text-white p-3 rounded-xl font-black text-[10px] uppercase">A Emergencias</button>
-            <button onclick="distribuirCapital('utilidad')" class="bg-emerald-600 text-white p-3 rounded-xl font-black text-[10px] uppercase">A Utilidad Neta</button>
-        </div>
-        <p class="text-[8px] text-slate-400 text-center italic">Esto restará del balance mensual y lo guardará en tu capital.</p>
-    </div>
-</section>
 
+        <h3 class="text-[10px] font-black uppercase text-slate-800 italic">Mover Saldo Operativo</h3>
+
+        <input type="number" id="move-amount" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none" placeholder="0.00">
+
+        
+
+        <div class="grid grid-cols-2 gap-2">
+
+           
+
+            <button onclick="distribuirCapital('utilidad')" class="bg-emerald-600 text-white p-3 rounded-xl font-black text-[10px] uppercase">A Utilidad Neta</button>
+          
+           <button onclick="distribuirCapital('emergencia')" class="bg-blue-600 text-white p-3 rounded-xl font-black text-[10px] uppercase">A Emergencias</button>
+
+        </div>
+
+        <p class="text-[8px] text-slate-400 text-center italic">Esto restará del balance mensual y lo guardará en tu capital.</p>
+
+    </div>
+
+</section> 
             <section id="view-history" class="hidden mt-8 space-y-6 pb-10">
     <header class="mt-4 relative overflow-hidden bg-[#08121e] rounded-[1.5rem] p-4 text-white shadow-2xl border border-slate-800/50">
     <div class="absolute top-0 right-0 w-20 h-20 bg-amber-500/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
