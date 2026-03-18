@@ -24,11 +24,6 @@ let reportSubView = 'income';
 let unidadesConfig = ['Hyundai County', 'Toyota Hiace'];
 let catEgresos = ['Combustible', 'Sueldos y Viáticos', 'Repuestos', 'Mantenimiento', 'Gastos de Operaciones'];
 let catIngresos = []; // Valores por defecto
-// --- ESTADO DE CAPITAL ---
-let capitalData = {
-    emergencia: 0,
-    utilidad: 0
-};
 
 window.updateFilterOptions = () => {
     const filterSelect = document.getElementById('global-filter');
@@ -285,36 +280,43 @@ window.updateTransactionFirebase = async () => {
 };
 // --- 1. NAVEGACIÓN ENTRE VISTAS ---
 window.showView = (viewName) => {
-    // 1. Ocultar todas las secciones (Incluyendo capital)
-    const views = ['dashboard', 'income', 'expense', 'history', 'settings', 'calculator', 'capital'];
+    // 1. OCULTAR TODAS LAS SECCIONES
+    // Asegúrate de que estos nombres coincidan EXACTAMENTE con los IDs de tu HTML (view-xxxx)
+    const views = ['dashboard', 'home', 'income', 'expense', 'history', 'settings', 'calculator', 'capital'];
     views.forEach(v => {
         const section = document.getElementById(`view-${v}`);
         if (section) section.classList.add('hidden');
     });
 
-    // 2. Mostrar la sección seleccionada
-    const target = document.getElementById(`view-${viewName}`);
+    // 2. MOSTRAR LA SECCIÓN SELECCIONADA
+    // Agregamos un fallback por si usas "home" o "dashboard" indistintamente
+    let targetId = `view-${viewName}`;
+    let target = document.getElementById(targetId);
+    
+    // Si buscas dashboard y no existe, intenta con view-home
+    if (!target && viewName === 'dashboard') target = document.getElementById('view-home');
+    
     if (target) {
         target.classList.remove('hidden');
         window.scrollTo(0, 0);
     }
 
     // 3. ACTUALIZAR COLORES DE LA BARRA DE NAVEGACIÓN
-    // AGREGAMOS 'capital': 'nav-capital' al mapeo
     const navButtons = {
         'dashboard': 'nav-home',
+        'home': 'nav-home', // Soporte para ambos nombres
         'history': 'nav-reports',
         'calculator': 'nav-calc',
         'settings': 'nav-settings',
-        'capital': 'nav-capital' // <--- ESTO ACTIVA EL COLOR AMARILLO
+        'capital': 'nav-capital'
     };
   
-    // Resetear fechas en formularios
+    // Resetear fechas en formularios al entrar
     const hoy = new Date().toISOString().split('T')[0];
     if (document.getElementById('in-date')) document.getElementById('in-date').value = hoy;
     if (document.getElementById('ex-date')) document.getElementById('ex-date').value = hoy;
 
-    // Primero: Apagamos todos los botones
+    // --- APAGAR TODOS LOS BOTONES ---
     Object.values(navButtons).forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
@@ -338,7 +340,7 @@ window.showView = (viewName) => {
         }
     });
 
-    // Segundo: Encendemos el botón activo (Efecto Ámbar con Brillo)
+    // --- ENCENDER EL BOTÓN ACTIVO ---
     const activeId = navButtons[viewName];
     if (activeId) {
         const activeBtn = document.getElementById(activeId);
@@ -364,10 +366,25 @@ window.showView = (viewName) => {
     }
 
     // --- 4. LÓGICA DE CARGA DE DATOS ---
-    if (viewName === 'dashboard') renderDashboard();
+    if (viewName === 'dashboard' || viewName === 'home') renderDashboard();
     if (viewName === 'history') renderHistory();
-    if (viewName === 'capital') {
-        if (typeof actualizarUI === 'function') actualizarUI();
+    if (viewName === 'settings') renderSettings();
+    if (viewName === 'capital') renderCapital(); // <--- Correcto: Carga tus L 27,700.00
+    
+    if (viewName === 'calculator') {
+        const resultDiv = document.getElementById('calc-result');
+        if (resultDiv) resultDiv.classList.add('hidden');
+    }
+    
+    if (viewName === 'expense') {
+        if (typeof prepararVistaGastos === 'function') prepararVistaGastos();
+        if (typeof fillUnitSelects === 'function') fillUnitSelects();
+    }
+    
+    if (viewName === 'income') {
+        if (typeof fillUnitSelects === 'function') fillUnitSelects();
+        const inAmount = document.getElementById('in-amount');
+        if (inAmount) inAmount.value = '';
     }
 };
 
@@ -395,11 +412,12 @@ window.renderDashboard = () => {
     const balanceTotal = document.getElementById('balance-total');
     const dashIn = document.getElementById('dash-total-in');
     const dashOut = document.getElementById('dash-total-out');
+    const dashUtil = document.getElementById('dash-total-util');
     const filtro = document.getElementById('global-filter')?.value || 'all';
     
     if (!listaTransacciones) return;
 
-    // 1. FILTRADO POR PERIODO
+    // 1. FILTRADO DE DATA
     const dataFiltrada = localTransactions.filter(t => {
         if (filtro === 'all') return true;
         return t.date && t.date.startsWith(filtro);
@@ -407,26 +425,21 @@ window.renderDashboard = () => {
 
     let sumaIngresos = 0;
     let sumaGastos = 0;
-    let sumaCapital = 0;
+    let sumaTransferencias = 0;
 
-    // 2. PROCESAMIENTO DE TOTALES (Lógica matemática)
+    // 2. CÁLCULO DE TOTALES
     dataFiltrada.forEach((t) => {
         const monto = parseFloat(t.amount) || 0;
-        if (t.type === 'income') {
-            sumaIngresos += monto;
-        } else if (t.type === 'expense') {
-            sumaGastos += monto;
-        } else if (t.type === 'capital_transfer') {
-            sumaCapital += monto; 
-        }
+        if (t.type === 'income') sumaIngresos += monto;
+        else if (t.type === 'expense') sumaGastos += monto;
+        else if (t.type === 'transfer') sumaTransferencias += monto;
     });
 
-    const totalGeneral = sumaIngresos - sumaGastos - sumaCapital;
+    const utilidadMes = sumaIngresos - sumaGastos;
+    const balanceCaja = utilidadMes - sumaTransferencias;
 
-    // 3. ORDENAMIENTO Y EXCLUSIÓN VISUAL
-    // Filtramos para que NO aparezcan los 'capital_transfer' en la lista del Dashboard
+    // 3. ORDENAMIENTO DE RECIENTES
     const recientes = [...dataFiltrada]
-        .filter(t => t.type !== 'capital_transfer') 
         .sort((a, b) => {
             const dateA = new Date((a.date || "2000-01-01") + 'T00:00:00').getTime();
             const dateB = new Date((b.date || "2000-01-01") + 'T00:00:00').getTime();
@@ -437,51 +450,60 @@ window.renderDashboard = () => {
         })
         .slice(0, 10);
 
-    // 4. GENERACIÓN DE HTML
+    // 4. GENERACIÓN DE HTML (SIN EVENTOS DE CLIC)
     let html = '';
     recientes.forEach((t) => {
-        const isInc = t.type === 'income';
         const monto = parseFloat(t.amount) || 0;
         const mainText = t.description || t.category;
+        
+        // Lógica de colores solicitada
+        let colorMonto = 'text-red-600';   // GASTOS
+        let colorCat = 'text-red-500';
+        let simbolo = '-';
+
+        if (t.type === 'income') {
+            colorMonto = 'text-blue-600';  // ENTRADAS (Azul)
+            colorCat = 'text-blue-500';
+            simbolo = '+';
+        } else if (t.type === 'transfer') {
+            colorMonto = 'text-emerald-600'; // TRASPASOS (Verde)
+            colorCat = 'text-emerald-500';
+            simbolo = '⇄';
+        }
+
         const dateObj = new Date((t.date || "") + 'T00:00:00');
         const displayDate = t.date ? dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'}) : 'S/F';
 
+        // Eliminado: onclick y clases de cursor/escala activa
         html += `
             <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-1 mb-2">
                 <div class="flex flex-col min-w-0 flex-1 pr-3">
-                    <p class="text-[11px] font-black text-slate-800 uppercase italic truncate leading-none mb-1">${mainText}</p>
+                    <p class="text-[11px] font-black text-slate-800 uppercase italic truncate mb-1">${mainText}</p>
                     <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1">
-                        <span class="${isInc ? 'text-emerald-500' : 'text-red-500'} font-black">${t.category}</span> 
+                        <span class="${colorCat} font-black">${t.category}</span> 
                         <span class="text-slate-300">•</span> 
-                        <span class="text-blue-500 font-black">${displayDate}</span>
+                        <span class="text-slate-500 font-black">${displayDate}</span>
+                        <span class="text-slate-300">•</span> 
+                        <span class="text-slate-500">${t.unit || 'GESTIÓN'}</span>
                     </p>
                 </div>
                 <div class="text-right">
-                    <p class="font-black text-sm ${isInc ? 'text-emerald-600' : 'text-red-600'} whitespace-nowrap leading-none">
-                        ${isInc ? '+' : '-'} L ${monto.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                    <p class="font-black text-sm ${colorMonto} whitespace-nowrap">
+                        ${simbolo} L ${monto.toLocaleString('en-US', {minimumFractionDigits: 2})}
                     </p>
                 </div>
             </div>`;
     });
 
-    listaTransacciones.innerHTML = html || `<p class="text-center py-10 text-slate-400 text-[10px] font-black uppercase">Sin movimientos</p>`;
+    listaTransacciones.innerHTML = html || `<p class="text-center py-10 text-slate-400 text-[10px] font-black uppercase tracking-widest">Sin movimientos</p>`;
 
-    if (balanceTotal) balanceTotal.innerText = `L ${totalGeneral.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-    if (dashIn) dashIn.innerText = `L ${sumaIngresos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-    if (dashOut) dashOut.innerText = `L ${sumaGastos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-  
-  // ... dentro de renderDashboard al final ...
-
-if (dashIn) dashIn.innerText = `L ${sumaIngresos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-if (dashOut) dashOut.innerText = `L ${sumaGastos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-
-// NUEVA LÓGICA PARA LA CASILLA VERDE:
-const utilidadCalculada = sumaIngresos - sumaGastos;
-const dashUtil = document.getElementById('dash-utilidad');
-if (dashUtil) {
-    dashUtil.innerText = `L ${utilidadCalculada.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-}
-  
+    // 5. RENDERIZADO DE CIFRAS
+    const fmt = (n) => `L ${n.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    
+    if (balanceTotal) balanceTotal.innerText = fmt(balanceCaja);
+    if (dashIn) dashIn.innerText = fmt(sumaIngresos);
+    if (dashOut) dashOut.innerText = fmt(sumaGastos);
+    if (dashUtil) dashUtil.innerText = fmt(utilidadMes);
 };
 
 // --- 3. RENDERIZADO DE HISTORIAL AGRUPADO ---
@@ -493,39 +515,48 @@ window.renderHistory = function() {
     const filtro = document.getElementById('global-filter')?.value || 'all';
     
     if (!container) return;
-
-    // 1. FILTRADO POR PERIODO
+  
+  // 1. FILTRADO CON LIMPIEZA
     const dataFiltradaPeriodo = localTransactions.filter(t => {
         if (filtro === 'all') return true;
-        return t.date && t.date.startsWith(filtro);
+        // Limpiamos la fecha de espacios para evitar que se pierdan
+        const fechaLimpia = (t.date || "").trim();
+        return fechaLimpia.startsWith(filtro);
     });
 
-    // 2. CÁLCULO DE TOTALES (Incluyendo Capital para el Balance neto)
+    // 2. CÁLCULO DE TOTALES (Usando Number para evitar errores de suma de strings)
     let sumaIn = 0;
     let sumaOut = 0;
-    let sumaCap = 0;
 
+    // 2. SUMA ESTRICTA (Aquí evitamos que basura en el 'type' afecte el balance)
     dataFiltradaPeriodo.forEach(t => {
-        const amt = parseFloat(t.amount) || 0;
-        if (t.type === 'income') sumaIn += amt;
-        else if (t.type === 'expense') sumaOut += amt;
-        else if (t.type === 'capital_transfer') sumaCap += amt;
+        const amt = Number(t.amount) || 0;
+        if (t.type === 'income') {
+            sumaIn += amt;
+        } else if (t.type === 'expense') { // CAMBIO CLAVE: Ya no es un 'else' genérico
+            sumaOut += amt;
+        }
     });
 
-    if (tabIn) tabIn.innerText = `L ${sumaIn.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-    if (tabOut) tabOut.innerText = `L ${sumaOut.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    // 3. ACTUALIZAR UI
+    const fmt = (n) => `L ${n.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    if (tabIn) tabIn.innerText = fmt(sumaIn);
+    if (tabOut) tabOut.innerText = fmt(sumaOut);
+    if (reportBalance) reportBalance.innerText = fmt(sumaIn - sumaOut);
 
-    // El Balance muestra lo que realmente queda en caja (Ingresos - Gastos - Lo movido a Capital)
-    let balanceTotal = sumaIn - sumaOut - sumaCap;
-    if (reportBalance) {
-        reportBalance.innerText = `L ${balanceTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-    }
+    // 3. ACTUALIZAR UI DE CABECERA
+    const formatCurrency = (num) => `L ${num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    
+    if (tabIn) tabIn.innerText = formatCurrency(sumaIn);
+    if (tabOut) tabOut.innerText = formatCurrency(sumaOut);
+    if (reportBalance) reportBalance.innerText = formatCurrency(sumaIn - sumaOut);
 
-    // 3. FILTRADO VISUAL POR SUBVISTA (Ingreso o Gasto)
-    // Esto garantiza que 'capital_transfer' NO aparezca aquí porque reportSubView solo es 'income' o 'expense'
+    // 4. FILTRADO POR TIPO PARA LA LISTA Y BREAKDOWN
+    // Es vital que reportSubView sea exactamente 'income' o 'expense'
     const filteredByType = dataFiltradaPeriodo.filter(t => t.type === reportSubView);
+    
+    // 5. AGRUPACIÓN PARA EL HTML
     const groups = {};
-
     filteredByType.forEach(t => {
         const dateStr = t.date || new Date().toISOString().split('T')[0];
         const dateObj = new Date(dateStr + 'T00:00:00');
@@ -537,6 +568,7 @@ window.renderHistory = function() {
         groups[year][month].push({...t, dateObj: dateObj});
     });
 
+    // 6. GENERACIÓN DE HTML DEL HISTORIAL
     let html = '';
     const sortedYears = Object.keys(groups).sort((a, b) => b - a);
 
@@ -544,7 +576,7 @@ window.renderHistory = function() {
         html += `
             <div class="flex items-center gap-4 my-8 px-2">
                 <div class="h-[1px] flex-1 bg-slate-200"></div>
-                <span class="text-2xl font-black text-slate-300 italic">${year}</span>
+                <span class="text-2xl font-black text-slate-300 italic tracking-tighter">${year}</span>
                 <div class="h-[1px] flex-1 bg-slate-200"></div>
             </div>`;
         
@@ -552,7 +584,7 @@ window.renderHistory = function() {
         const sortedMonths = Object.keys(groups[year]).sort((a, b) => mesesNombres.indexOf(b) - mesesNombres.indexOf(a));
 
         sortedMonths.forEach(month => {
-            html += `<h3 class="text-[10px] font-black uppercase text-slate-400 ml-4 border-l-4 border-blue-500 pl-3 italic mb-4">${month}</h3><div class="space-y-3 mb-10">`;
+            html += `<h3 class="text-[10px] font-black uppercase text-slate-400 ml-4 border-l-4 border-blue-500 pl-3 italic mb-4 tracking-[0.2em]">${month}</h3><div class="space-y-3 mb-10">`;
             
             groups[year][month].sort((a, b) => b.dateObj - a.dateObj).forEach(t => {
                 const isInc = t.type === 'income';
@@ -561,12 +593,14 @@ window.renderHistory = function() {
                     <div class="flex flex-col min-w-0 flex-1 pr-3">
                         <p class="text-[11px] font-black text-slate-800 uppercase italic truncate mb-1">${t.description || t.category}</p>
                         <p class="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                            <span class="${isInc ? 'text-green-500' : 'text-red-500'} font-black">${t.category}</span> • ${t.unit || 'S/U'}
+                            <span class="${isInc ? 'text-green-500' : 'text-red-500'} font-black">${t.category}</span> 
+                            <span class="text-slate-300">•</span> 
+                            <span class="text-blue-500 font-black">${t.unit || 'S/U'}</span>
                         </p>
                     </div>
-                    <div class="text-right flex items-center gap-3">
-                        <div>
-                            <p class="font-black text-sm ${isInc ? 'text-green-600' : 'text-red-600'}">L ${parseFloat(t.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <p class="font-black text-sm ${isInc ? 'text-green-600' : 'text-red-600'}">${formatCurrency(Number(t.amount))}</p>
                             <p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${t.dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'})}</p>
                         </div>
                         <div class="flex flex-col gap-1 border-l border-slate-50 pl-2">
@@ -580,8 +614,116 @@ window.renderHistory = function() {
         });
     });
 
-    container.innerHTML = html || '<p class="text-center py-20 text-slate-400 font-bold uppercase text-[10px]">No hay registros</p>';
-    if (typeof renderReportBreakdown === 'function') renderReportBreakdown();
+    container.innerHTML = html || '<p class="text-center py-20 text-slate-400 font-bold uppercase text-[10px]">No hay registros en este periodo</p>';
+    
+    // 7. LLAMAR AL BREAKDOWN PASANDO LA DATA YA FILTRADA
+    if (typeof renderReportBreakdown === 'function') {
+        renderReportBreakdown(filteredByType); 
+    }
+}
+
+
+// 2. FUNCIÓN PARA DISTRIBUIR DESDE EL INPUT MANUAL
+// --- FUNCIONES DE GESTIÓN DE CAPITAL (FIREBASE V10) ---
+
+window.distribuirCapital = async (destino) => {
+    const amountInput = document.getElementById('move-amount');
+    const filtro = document.getElementById('global-filter')?.value || ""; // Obtenemos el mes del filtro
+    const monto = parseFloat(amountInput.value) || 0;
+
+    if (monto <= 0) return alert("Monto inválido");
+
+    // LÓGICA DE FECHA INTELIGENTE:
+    // Si el filtro es '2025-12', la fecha será '2025-12-28'
+    // Si no hay filtro, usa la fecha de hoy.
+    const fechaParaGuardar = (filtro && filtro !== 'all') 
+        ? `${filtro}-28` 
+        : new Date().toISOString().split('T')[0];
+
+    try {
+        const path = collection(db, 'usuarios', USER_ID, 'movimientos');
+        await addDoc(path, {
+            amount: monto,
+            category: "Capital",
+            description: `TRASPASO A ${destino.toUpperCase()}`,
+            date: fechaParaGuardar, // <--- AQUÍ ESTÁ EL TRUCO
+            type: "transfer",
+            subtype: destino,
+            unit: "GESTIÓN",
+            createdAt: serverTimestamp() 
+        });
+
+        amountInput.value = '';
+        alert("¡Capital distribuido en el mes seleccionado!");
+    } catch (error) {
+        alert("Error: " + error.message);
+    }
+};
+
+window.transferirACapital = async () => {
+    const filtro = document.getElementById('global-filter')?.value;
+    if (!filtro || filtro === 'all') return alert("Selecciona un mes.");
+
+    const dataMes = localTransactions.filter(t => t.date && t.date.startsWith(filtro));
+    let sIn = 0; let sOut = 0; let sTrans = 0;
+    
+    dataMes.forEach(t => {
+        const a = Number(t.amount) || 0;
+        if (t.type === 'income') sIn += a;
+        else if (t.type === 'expense') sOut += a;
+        else if (t.type === 'transfer') sTrans += a;
+    });
+
+    const disponible = (sIn - sOut) - sTrans;
+    if (disponible <= 0) return alert("No hay utilidad disponible.");
+
+    if (confirm(`¿Transferir L ${disponible.toLocaleString()}?`)) {
+        try {
+            // CORRECCIÓN DE RUTA AQUÍ TAMBIÉN
+            const path = collection(db, 'usuarios', USER_ID, 'movimientos');
+            await addDoc(path, {
+                amount: disponible,
+                category: "Capital",
+                description: "CIERRE DE MES - TRASPASO UTILIDAD",
+                date: `${filtro}-28`, 
+                type: "transfer",
+                subtype: "utilidad",
+                unit: "GESTIÓN DE CAPITAL",
+                createdAt: serverTimestamp()
+            });
+            alert("Traspaso exitoso.");
+        } catch (e) {
+            alert("Error: " + e.message);
+        }
+    }
+};
+
+window.renderCapital = () => {
+    const capEmergencia = document.getElementById('cap-emergencia');
+    const capUtilidad = document.getElementById('cap-utilidad');
+    
+    if (!capEmergencia || !capUtilidad) return;
+
+    let totalEmergencia = 0;
+    let totalUtilidadNeta = 0;
+
+    // Sumamos todo el historial sin filtrar por mes
+    localTransactions.forEach(t => {
+        if (t.type === 'transfer') {
+            const amt = Number(t.amount) || 0;
+            // Aseguramos que el subtype coincida con lo que mandamos a Firebase
+            if (t.subtype === 'emergencia') {
+                totalEmergencia += amt;
+            } else if (t.subtype === 'utilidad') {
+                totalUtilidadNeta += amt;
+            }
+        }
+    });
+
+    const fmt = (n) => `L ${n.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+
+    capEmergencia.innerText = fmt(totalEmergencia);
+    capUtilidad.innerText = fmt(totalUtilidadNeta);
 };
 
 // --- AÑADIR NUEVA UNIDAD ---
@@ -649,100 +791,6 @@ async function loadConfig() {
     renderSettings();
 }
 
-// --- GESTIÓN DE CAPITAL ---
-
-// Cargar saldos de capital desde Firebase
-async function loadCapital() {
-    const docRef = doc(db, 'usuarios', USER_ID, 'config', 'capital');
-    try {
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-            capitalData = snap.data();
-        }
-        actualizarUI();
-    } catch (e) {
-        console.error("Error cargando capital:", e);
-    }
-}
-
-// Función para actualizar los textos en el HTML
-function actualizarUI() {
-    const elEmergencia = document.getElementById('cap-emergencia');
-    const elUtilidad = document.getElementById('cap-utilidad');
-    
-    if (elEmergencia) elEmergencia.innerText = `L ${capitalData.emergencia.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-    if (elUtilidad) elUtilidad.innerText = `L ${capitalData.utilidad.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-}
-
-// Función que ejecutan tus botones del HTML
-window.distribuirCapital = async (destino) => {
-    const inputAmount = document.getElementById('move-amount');
-    const filterSelect = document.getElementById('global-filter'); // Capturamos el filtro
-    const monto = parseFloat(inputAmount.value);
-
-    // 1. Validaciones
-    if (isNaN(monto) || monto <= 0) {
-        return alert("⚠️ Ingresa un monto válido");
-    }
-
-    // Calculamos el balance actual basándonos en los filtros aplicados actualmente
-    let sumaIn = 0;
-    let sumaOut = 0;
-    let sumaCapital = 0;
-
-    localTransactions.forEach(t => {
-        const amt = parseFloat(t.amount) || 0;
-        if (t.type === 'income') sumaIn += amt;
-        else if (t.type === 'expense') sumaOut += amt;
-        else if (t.type === 'capital_transfer') sumaCapital += amt;
-    });
-
-    const balanceDisponible = sumaIn - sumaOut - sumaCapital;
-
-    if (monto > balanceDisponible) {
-        return alert(`❌ Saldo insuficiente en este periodo. Disponible: L ${balanceDisponible.toLocaleString()}`);
-    }
-
-    // 2. Determinar la fecha del movimiento
-    // Si hay un mes seleccionado (YYYY-MM), usamos el primer día de ese mes.
-    // Si no, usamos la fecha de hoy.
-    let fechaDestino = new Date().toISOString().split('T')[0];
-    if (filterSelect && filterSelect.value !== 'all' && filterSelect.value.length === 7) {
-        fechaDestino = `${filterSelect.value}-01`; 
-    }
-
-    try {
-        // 3. Crear el movimiento especial (NO es expense)
-        // Al ser 'capital_transfer' no se mezclará con tus gastos operativos
-        await addDoc(collection(db, 'usuarios', USER_ID, 'movimientos'), {
-            type: 'capital_transfer', 
-            description: `TRASPASO A ${destino.toUpperCase()}`,
-            amount: monto,
-            category: 'Capital',
-            unit: 'S/U',
-            date: fechaDestino, 
-            createdAt: serverTimestamp()
-        });
-
-        // 4. Actualizar los saldos acumulados de capital
-        capitalData[destino] = (capitalData[destino] || 0) + monto;
-        const docRef = doc(db, 'usuarios', USER_ID, 'config', 'capital');
-        await setDoc(docRef, capitalData);
-
-        // 5. Limpieza y Feedback
-        inputAmount.value = "";
-        actualizarUI(); // Refresca los cuadritos de Emergencia/Utilidad
-        alert(`✅ Fondos movidos a ${destino}. El balance de este periodo ha sido actualizado.`);
-        
-        // El onSnapshot de Firebase se encargará de llamar a renderDashboard() 
-        // automáticamente al detectar el nuevo movimiento.
-
-    } catch (e) {
-        console.error("Error en traspaso:", e);
-        alert("Ocurrió un error al procesar el movimiento");
-    }
-};
-
 function renderSettings() {
     const unitList = document.getElementById('lista-unidades-ajustes');
     const catList = document.getElementById('lista-categorias-ajustes');
@@ -798,19 +846,18 @@ if (catList) {
 }
 // --- RENDERIZAR DISTRIBUCIÓN DE GASTOS (BARRAS) ---
 // 1. LA FUNCIÓN PRINCIPAL (Sustituye la que tienes)
-window.renderReportBreakdown = () => {
+window.renderReportBreakdown = (dataRecibida) => {
     const container = document.getElementById('lista-breakdown');
     const wrapper = document.getElementById('report-breakdown-container');
     const titleElem = document.getElementById('breakdown-title');
     const iconElem = document.getElementById('breakdown-icon');
     
-    // Filtro inteligente
-    const filtro = document.getElementById('global-filter')?.value || 'all';
-    
     if (!container || !wrapper) return;
 
-    // Filtrar data por Periodo y Tipo
-    const data = localTransactions.filter(t => {
+    // Si no recibe data (ej. llamada directa), intenta filtrar de nuevo, 
+    // pero lo ideal es que renderHistory se la pase.
+    const data = dataRecibida || localTransactions.filter(t => {
+        const filtro = document.getElementById('global-filter')?.value || 'all';
         const cumpleFecha = (filtro === 'all') || (t.date && t.date.startsWith(filtro));
         return cumpleFecha && t.type === reportSubView;
     });
@@ -835,7 +882,7 @@ window.renderReportBreakdown = () => {
     data.forEach(t => {
         const u = t.unit || 'Sin Unidad';
         const c = t.category || (isIncome ? 'Sin Contrato' : 'Sin Categoría');
-        const monto = parseFloat(t.amount) || 0;
+        const monto = Number(t.amount) || 0;
 
         if (!mapaUnidades[u]) mapaUnidades[u] = { total: 0, cats: {} };
         mapaUnidades[u].total += monto;
@@ -856,8 +903,7 @@ window.renderReportBreakdown = () => {
                 <div class="space-y-4">
                     ${window.generarBarrasInternas(info.cats, info.total, barColor, accentColor)}
                 </div>
-            </div>
-        `;
+            </div>`;
     });
 
     // SECCIÓN B: Resumen Global
@@ -868,14 +914,12 @@ window.renderReportBreakdown = () => {
             <div class="space-y-4">
                 ${window.generarBarrasInternas(totalesGlobalesPorCat, totalGeneral, 'bg-blue-600', 'text-blue-600')}
             </div>
-        </div>
-    `;
+        </div>`;
 
     container.innerHTML = html;
 };
 
-// 2. LA FUNCIÓN AUXILIAR (Esta es la que te falta o no encuentra)
-// Le ponemos window. para que sea accesible desde cualquier parte
+// FUNCIÓN AUXILIAR
 window.generarBarrasInternas = (diccionarioCats, totalPadre, colorBarra, colorTexto) => {
     return Object.entries(diccionarioCats)
         .sort((a, b) => b[1] - a[1])
@@ -897,8 +941,7 @@ window.generarBarrasInternas = (diccionarioCats, totalPadre, colorBarra, colorTe
                     <div class="w-full h-2 bg-white rounded-full overflow-hidden border border-slate-100 shadow-inner">
                         <div class="h-full ${colorBarra} transition-all duration-1000" style="width: ${porcentaje}%"></div>
                     </div>
-                </div>
-            `;
+                </div>`;
         }).join('');
 };
 
@@ -1281,22 +1324,19 @@ window.enviarCotizacionWhatsApp = () => {
 const q = query(collection(db, 'usuarios', USER_ID, 'movimientos'), orderBy('createdAt', 'desc'));
 
 onSnapshot(q, (snapshot) => {
-    localTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    renderDashboard();
-    renderHistory();
-    localTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // ESTA LÍNEA ES VITAL: Vacía la lista local antes de meter los datos nuevos
+    localTransactions = []; 
     
-    // 1. Primero actualizamos el selector con los meses reales que vinieron de Firebase
+    localTransactions = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+    }));
+
+    // Actualizamos visualmente todo
     window.updateFilterOptions(); 
-    
-    // 2. Luego dibujamos todo lo demás
     renderDashboard();
     if (typeof renderHistory === 'function') renderHistory();
-});
-
-// Modifica tu función de carga inicial o añade esto al final del archivo
-document.addEventListener('DOMContentLoaded', () => {
-    loadCapital();
+    if (typeof renderCapital === 'function') renderCapital();
 });
 
 // Inicializar
