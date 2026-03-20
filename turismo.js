@@ -280,43 +280,36 @@ window.updateTransactionFirebase = async () => {
 };
 // --- 1. NAVEGACIÓN ENTRE VISTAS ---
 window.showView = (viewName) => {
-    // 1. OCULTAR TODAS LAS SECCIONES
-    // Asegúrate de que estos nombres coincidan EXACTAMENTE con los IDs de tu HTML (view-xxxx)
-    const views = ['dashboard', 'home', 'income', 'expense', 'history', 'settings', 'calculator', 'capital'];
+    // 1. Ocultar todas las secciones
+    // Agregamos 'calculator' a la lista para que se oculte cuando vas a otras pantallas
+    const views = ['dashboard', 'income', 'expense', 'history', 'settings', 'calculator'];
     views.forEach(v => {
         const section = document.getElementById(`view-${v}`);
         if (section) section.classList.add('hidden');
     });
 
-    // 2. MOSTRAR LA SECCIÓN SELECCIONADA
-    // Agregamos un fallback por si usas "home" o "dashboard" indistintamente
-    let targetId = `view-${viewName}`;
-    let target = document.getElementById(targetId);
-    
-    // Si buscas dashboard y no existe, intenta con view-home
-    if (!target && viewName === 'dashboard') target = document.getElementById('view-home');
-    
+    // 2. Mostrar la sección seleccionada
+    const target = document.getElementById(`view-${viewName}`);
     if (target) {
         target.classList.remove('hidden');
         window.scrollTo(0, 0);
     }
 
     // 3. ACTUALIZAR COLORES DE LA BARRA DE NAVEGACIÓN
+    // Agregamos el mapeo del botón "Cotizar"
     const navButtons = {
         'dashboard': 'nav-home',
-        'home': 'nav-home', // Soporte para ambos nombres
         'history': 'nav-reports',
         'calculator': 'nav-calc',
-        'settings': 'nav-settings',
-        'capital': 'nav-capital'
+        'settings': 'nav-settings'
     };
   
-    // Resetear fechas en formularios al entrar
+    // Resetear fechas en formularios de ingresos/gastos
     const hoy = new Date().toISOString().split('T')[0];
     if (document.getElementById('in-date')) document.getElementById('in-date').value = hoy;
     if (document.getElementById('ex-date')) document.getElementById('ex-date').value = hoy;
 
-    // --- APAGAR TODOS LOS BOTONES ---
+    // Primero: Apagamos todos los botones (Estado inactivo)
     Object.values(navButtons).forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
@@ -340,44 +333,41 @@ window.showView = (viewName) => {
         }
     });
 
-    // --- ENCENDER EL BOTÓN ACTIVO ---
+    // Segundo: Encendemos el botón activo (Efecto Ámbar con Brillo)
     const activeId = navButtons[viewName];
     if (activeId) {
         const activeBtn = document.getElementById(activeId);
-        if (activeBtn) {
-            activeBtn.classList.remove('opacity-40');
-            activeBtn.classList.add('opacity-100');
-            
-            const icon = activeBtn.querySelector('svg');
-            const text = activeBtn.querySelector('span');
-            
-            if (icon) {
-                icon.classList.remove('text-slate-400');
-                icon.classList.add('text-amber-400');
-                icon.style.color = '#fbbf24'; 
-                icon.style.filter = 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.5))';
-            }
-            if (text) {
-                text.classList.remove('text-slate-400');
-                text.classList.add('text-amber-400');
-                text.style.color = '#fbbf24';
-            }
+        activeBtn.classList.remove('opacity-40');
+        activeBtn.classList.add('opacity-100');
+        
+        const icon = activeBtn.querySelector('svg');
+        const text = activeBtn.querySelector('span');
+        
+        if (icon) {
+            icon.classList.remove('text-slate-400');
+            icon.classList.add('text-amber-400');
+            icon.style.color = '#fbbf24'; 
+            icon.style.filter = 'drop-shadow(0 0 8px rgba(251, 191, 36, 0.5))';
+        }
+        if (text) {
+            text.classList.remove('text-slate-400');
+            text.classList.add('text-amber-400');
+            text.style.color = '#fbbf24';
         }
     }
 
     // --- 4. LÓGICA DE CARGA DE DATOS ---
-    if (viewName === 'dashboard' || viewName === 'home') renderDashboard();
     if (viewName === 'history') renderHistory();
     if (viewName === 'settings') renderSettings();
-    if (viewName === 'capital') renderCapital(); // <--- Correcto: Carga tus L 27,700.00
     
+    // Si entras a la calculadora, puedes resetear los campos si quieres:
     if (viewName === 'calculator') {
         const resultDiv = document.getElementById('calc-result');
         if (resultDiv) resultDiv.classList.add('hidden');
     }
     
     if (viewName === 'expense') {
-        if (typeof prepararVistaGastos === 'function') prepararVistaGastos();
+        prepararVistaGastos();
         if (typeof fillUnitSelects === 'function') fillUnitSelects();
     }
     
@@ -407,38 +397,39 @@ window.setReportSubView = (type) => {
 };
 
 // --- 2. RENDERIZADO DEL DASHBOARD (INICIO) ---
+// --- RENDERIZADO DEL DASHBOARD ACTUALIZADO ---
 window.renderDashboard = () => {
     const listaTransacciones = document.getElementById('lista-transacciones');
     const balanceTotal = document.getElementById('balance-total');
     const dashIn = document.getElementById('dash-total-in');
     const dashOut = document.getElementById('dash-total-out');
-    const dashUtil = document.getElementById('dash-total-util');
     const filtro = document.getElementById('global-filter')?.value || 'all';
     
     if (!listaTransacciones) return;
 
-    // 1. FILTRADO DE DATA
+    // 1. FILTRADO: Decidir qué data procesar
     const dataFiltrada = localTransactions.filter(t => {
         if (filtro === 'all') return true;
         return t.date && t.date.startsWith(filtro);
     });
 
+    let totalGeneral = 0;
     let sumaIngresos = 0;
     let sumaGastos = 0;
-    let sumaTransferencias = 0;
 
-    // 2. CÁLCULO DE TOTALES
+    // 2. Procesamos totales sobre la data filtrada
     dataFiltrada.forEach((t) => {
         const monto = parseFloat(t.amount) || 0;
-        if (t.type === 'income') sumaIngresos += monto;
-        else if (t.type === 'expense') sumaGastos += monto;
-        else if (t.type === 'transfer') sumaTransferencias += monto;
+        if (t.type === 'income') {
+            sumaIngresos += monto;
+            totalGeneral += monto;
+        } else {
+            sumaGastos += monto;
+            totalGeneral -= monto;
+        }
     });
 
-    const utilidadMes = sumaIngresos - sumaGastos;
-    const balanceCaja = utilidadMes - sumaTransferencias;
-
-    // 3. ORDENAMIENTO DE RECIENTES
+    // 3. Ordenamos y tomamos los 10 más actuales del periodo filtrado
     const recientes = [...dataFiltrada]
         .sort((a, b) => {
             const dateA = new Date((a.date || "2000-01-01") + 'T00:00:00').getTime();
@@ -450,112 +441,87 @@ window.renderDashboard = () => {
         })
         .slice(0, 10);
 
-    // 4. GENERACIÓN DE HTML (SIN EVENTOS DE CLIC)
+    // 4. Generamos el HTML
     let html = '';
     recientes.forEach((t) => {
+        const isInc = t.type === 'income';
         const monto = parseFloat(t.amount) || 0;
         const mainText = t.description || t.category;
-        
-        // Lógica de colores solicitada
-        let colorMonto = 'text-red-600';   // GASTOS
-        let colorCat = 'text-red-500';
-        let simbolo = '-';
-
-        if (t.type === 'income') {
-            colorMonto = 'text-blue-600';  // ENTRADAS (Azul)
-            colorCat = 'text-blue-500';
-            simbolo = '+';
-        } else if (t.type === 'transfer') {
-            colorMonto = 'text-emerald-600'; // TRASPASOS (Verde)
-            colorCat = 'text-emerald-500';
-            simbolo = '⇄';
-        }
-
         const dateObj = new Date((t.date || "") + 'T00:00:00');
         const displayDate = t.date ? dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'}) : 'S/F';
 
-        // Eliminado: onclick y clases de cursor/escala activa
         html += `
-            <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-1 mb-2">
+            <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-1 mb-2 active:scale-[0.98] transition-transform">
                 <div class="flex flex-col min-w-0 flex-1 pr-3">
-                    <p class="text-[11px] font-black text-slate-800 uppercase italic truncate mb-1">${mainText}</p>
+                    <p class="text-[11px] font-black text-slate-800 uppercase italic truncate leading-none mb-1">${mainText}</p>
                     <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1">
-                        <span class="${colorCat} font-black">${t.category}</span> 
+                        <span class="${isInc ? 'text-emerald-500' : 'text-red-500'} font-black">${t.category}</span> 
                         <span class="text-slate-300">•</span> 
-                        <span class="text-slate-500 font-black">${displayDate}</span>
+                        <span class="text-blue-500 font-black">${displayDate}</span>
                         <span class="text-slate-300">•</span> 
-                        <span class="text-slate-500">${t.unit || 'GESTIÓN'}</span>
+                        <span class="text-slate-500">${t.unit || 'S/U'}</span>
                     </p>
                 </div>
                 <div class="text-right">
-                    <p class="font-black text-sm ${colorMonto} whitespace-nowrap">
-                        ${simbolo} L ${monto.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                    <p class="font-black text-sm ${isInc ? 'text-emerald-600' : 'text-red-600'} whitespace-nowrap leading-none">
+                        ${isInc ? '+' : '-'} L ${monto.toLocaleString('en-US', {minimumFractionDigits: 2})}
                     </p>
                 </div>
             </div>`;
     });
 
-    listaTransacciones.innerHTML = html || `<p class="text-center py-10 text-slate-400 text-[10px] font-black uppercase tracking-widest">Sin movimientos</p>`;
+    listaTransacciones.innerHTML = html || `<p class="text-center py-10 text-slate-400 text-[10px] font-black uppercase tracking-widest">Sin movimientos en este periodo</p>`;
 
-    // 5. RENDERIZADO DE CIFRAS
-    const fmt = (n) => `L ${n.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-    
-    if (balanceTotal) balanceTotal.innerText = fmt(balanceCaja);
-    if (dashIn) dashIn.innerText = fmt(sumaIngresos);
-    if (dashOut) dashOut.innerText = fmt(sumaGastos);
-    if (dashUtil) dashUtil.innerText = fmt(utilidadMes);
+    if (balanceTotal) balanceTotal.innerText = `L ${totalGeneral.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    if (dashIn) dashIn.innerText = `L ${sumaIngresos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    if (dashOut) dashOut.innerText = `L ${sumaGastos.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
 };
 
 // --- 3. RENDERIZADO DE HISTORIAL AGRUPADO ---
 window.renderHistory = function() {
     const container = document.getElementById('historial-agrupado');
     const reportBalance = document.getElementById('report-balance-caja');
+    
     const tabIn = document.getElementById('tab-total-in');
     const tabOut = document.getElementById('tab-total-out');
-    const filtro = document.getElementById('global-filter')?.value || 'all';
     
+    const filtro = document.getElementById('global-filter')?.value || 'all';
     if (!container) return;
-  
-  // 1. FILTRADO CON LIMPIEZA
+
+    // 1. FILTRADO INICIAL: Periodo Global
     const dataFiltradaPeriodo = localTransactions.filter(t => {
         if (filtro === 'all') return true;
-        // Limpiamos la fecha de espacios para evitar que se pierdan
-        const fechaLimpia = (t.date || "").trim();
-        return fechaLimpia.startsWith(filtro);
+        return t.date && t.date.startsWith(filtro);
     });
 
-    // 2. CÁLCULO DE TOTALES (Usando Number para evitar errores de suma de strings)
+    // 2. Cálculo de Totales para Botones y Balance
     let sumaIn = 0;
     let sumaOut = 0;
 
-    // 2. SUMA ESTRICTA (Aquí evitamos que basura en el 'type' afecte el balance)
     dataFiltradaPeriodo.forEach(t => {
-        const amt = Number(t.amount) || 0;
-        if (t.type === 'income') {
-            sumaIn += amt;
-        } else if (t.type === 'expense') { // CAMBIO CLAVE: Ya no es un 'else' genérico
-            sumaOut += amt;
-        }
+        const amt = parseFloat(t.amount) || 0;
+        if (t.type === 'income') sumaIn += amt;
+        // Importante: No sumamos 'transfer' al balance de gastos operativos para no descuadrar utilidad real
+        else if (t.type === 'expense') sumaOut += amt;
     });
 
-    // 3. ACTUALIZAR UI
-    const fmt = (n) => `L ${n.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-    if (tabIn) tabIn.innerText = fmt(sumaIn);
-    if (tabOut) tabOut.innerText = fmt(sumaOut);
-    if (reportBalance) reportBalance.innerText = fmt(sumaIn - sumaOut);
+    if (tabIn) tabIn.innerText = `L ${sumaIn.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    if (tabOut) tabOut.innerText = `L ${sumaOut.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
 
-    // 3. ACTUALIZAR UI DE CABECERA
-    const formatCurrency = (num) => `L ${num.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    
-    if (tabIn) tabIn.innerText = formatCurrency(sumaIn);
-    if (tabOut) tabOut.innerText = formatCurrency(sumaOut);
-    if (reportBalance) reportBalance.innerText = formatCurrency(sumaIn - sumaOut);
+    let balanceTotal = sumaIn - sumaOut;
+    if (reportBalance) {
+        reportBalance.innerText = `L ${balanceTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    }
 
-    // 4. FILTRADO POR TIPO PARA LA LISTA Y BREAKDOWN
-    // Es vital que reportSubView sea exactamente 'income' o 'expense'
-    const filteredByType = dataFiltradaPeriodo.filter(t => t.type === reportSubView);
-    
-    // 5. AGRUPACIÓN PARA EL HTML
+    // 3. FILTRADO POR TIPO (MODIFICADO PARA MOSTRAR CAPITAL EN GASTOS)
+    const filteredByType = dataFiltradaPeriodo.filter(t => {
+        if (reportSubView === 'expense') {
+            // Si estamos en gastos, mostramos gastos reales Y movimientos de capital
+            return t.type === 'expense' || t.type === 'transfer';
+        }
+        return t.type === reportSubView;
+    });
+
     const groups = {};
     filteredByType.forEach(t => {
         const dateStr = t.date || new Date().toISOString().split('T')[0];
@@ -568,7 +534,6 @@ window.renderHistory = function() {
         groups[year][month].push({...t, dateObj: dateObj});
     });
 
-    // 6. GENERACIÓN DE HTML DEL HISTORIAL
     let html = '';
     const sortedYears = Object.keys(groups).sort((a, b) => b - a);
 
@@ -588,19 +553,25 @@ window.renderHistory = function() {
             
             groups[year][month].sort((a, b) => b.dateObj - a.dateObj).forEach(t => {
                 const isInc = t.type === 'income';
+                const isTrans = t.type === 'transfer';
+                
+                // Color diferenciado para Capital (Amarillo/Dorado) para que sepas que es un traspaso
+                let colorClase = isInc ? 'text-green-500' : (isTrans ? 'text-amber-500' : 'text-red-500');
+                let montoClase = isInc ? 'text-green-600' : (isTrans ? 'text-amber-600' : 'text-red-600');
+
                 html += `
                 <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center mx-2">
                     <div class="flex flex-col min-w-0 flex-1 pr-3">
                         <p class="text-[11px] font-black text-slate-800 uppercase italic truncate mb-1">${t.description || t.category}</p>
                         <p class="text-[9px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                            <span class="${isInc ? 'text-green-500' : 'text-red-500'} font-black">${t.category}</span> 
+                            <span class="${colorClase} font-black">${t.category}</span> 
                             <span class="text-slate-300">•</span> 
                             <span class="text-blue-500 font-black">${t.unit || 'S/U'}</span>
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="text-right">
-                            <p class="font-black text-sm ${isInc ? 'text-green-600' : 'text-red-600'}">${formatCurrency(Number(t.amount))}</p>
+                            <p class="font-black text-sm ${montoClase}">${isInc ? '+' : '-'} L ${parseFloat(t.amount).toLocaleString('en-US', {minimumFractionDigits: 2})}</p>
                             <p class="text-[8px] font-bold text-slate-400 uppercase mt-1">${t.dateObj.toLocaleDateString('es-HN', {day:'2-digit', month:'2-digit'})}</p>
                         </div>
                         <div class="flex flex-col gap-1 border-l border-slate-50 pl-2">
@@ -615,117 +586,8 @@ window.renderHistory = function() {
     });
 
     container.innerHTML = html || '<p class="text-center py-20 text-slate-400 font-bold uppercase text-[10px]">No hay registros en este periodo</p>';
-    
-    // 7. LLAMAR AL BREAKDOWN PASANDO LA DATA YA FILTRADA
-    if (typeof renderReportBreakdown === 'function') {
-        renderReportBreakdown(filteredByType); 
-    }
+    if (typeof renderReportBreakdown === 'function') renderReportBreakdown();
 }
-
-
-// 2. FUNCIÓN PARA DISTRIBUIR DESDE EL INPUT MANUAL
-// --- FUNCIONES DE GESTIÓN DE CAPITAL (FIREBASE V10) ---
-
-window.distribuirCapital = async (destino) => {
-    const amountInput = document.getElementById('move-amount');
-    const filtro = document.getElementById('global-filter')?.value || ""; // Obtenemos el mes del filtro
-    const monto = parseFloat(amountInput.value) || 0;
-
-    if (monto <= 0) return alert("Monto inválido");
-
-    // LÓGICA DE FECHA INTELIGENTE:
-    // Si el filtro es '2025-12', la fecha será '2025-12-28'
-    // Si no hay filtro, usa la fecha de hoy.
-    const fechaParaGuardar = (filtro && filtro !== 'all') 
-        ? `${filtro}-28` 
-        : new Date().toISOString().split('T')[0];
-
-    try {
-        const path = collection(db, 'usuarios', USER_ID, 'movimientos');
-        await addDoc(path, {
-            amount: monto,
-            category: "Capital",
-            description: `TRASPASO A ${destino.toUpperCase()}`,
-            date: fechaParaGuardar, // <--- AQUÍ ESTÁ EL TRUCO
-            type: "transfer",
-            subtype: destino,
-            unit: "GESTIÓN",
-            createdAt: serverTimestamp() 
-        });
-
-        amountInput.value = '';
-        alert("¡Capital distribuido en el mes seleccionado!");
-    } catch (error) {
-        alert("Error: " + error.message);
-    }
-};
-
-window.transferirACapital = async () => {
-    const filtro = document.getElementById('global-filter')?.value;
-    if (!filtro || filtro === 'all') return alert("Selecciona un mes.");
-
-    const dataMes = localTransactions.filter(t => t.date && t.date.startsWith(filtro));
-    let sIn = 0; let sOut = 0; let sTrans = 0;
-    
-    dataMes.forEach(t => {
-        const a = Number(t.amount) || 0;
-        if (t.type === 'income') sIn += a;
-        else if (t.type === 'expense') sOut += a;
-        else if (t.type === 'transfer') sTrans += a;
-    });
-
-    const disponible = (sIn - sOut) - sTrans;
-    if (disponible <= 0) return alert("No hay utilidad disponible.");
-
-    if (confirm(`¿Transferir L ${disponible.toLocaleString()}?`)) {
-        try {
-            // CORRECCIÓN DE RUTA AQUÍ TAMBIÉN
-            const path = collection(db, 'usuarios', USER_ID, 'movimientos');
-            await addDoc(path, {
-                amount: disponible,
-                category: "Capital",
-                description: "CIERRE DE MES - TRASPASO UTILIDAD",
-                date: `${filtro}-28`, 
-                type: "transfer",
-                subtype: "utilidad",
-                unit: "GESTIÓN DE CAPITAL",
-                createdAt: serverTimestamp()
-            });
-            alert("Traspaso exitoso.");
-        } catch (e) {
-            alert("Error: " + e.message);
-        }
-    }
-};
-
-window.renderCapital = () => {
-    const capEmergencia = document.getElementById('cap-emergencia');
-    const capUtilidad = document.getElementById('cap-utilidad');
-    
-    if (!capEmergencia || !capUtilidad) return;
-
-    let totalEmergencia = 0;
-    let totalUtilidadNeta = 0;
-
-    // Sumamos todo el historial sin filtrar por mes
-    localTransactions.forEach(t => {
-        if (t.type === 'transfer') {
-            const amt = Number(t.amount) || 0;
-            // Aseguramos que el subtype coincida con lo que mandamos a Firebase
-            if (t.subtype === 'emergencia') {
-                totalEmergencia += amt;
-            } else if (t.subtype === 'utilidad') {
-                totalUtilidadNeta += amt;
-            }
-        }
-    });
-
-    const fmt = (n) => `L ${n.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-
-    capEmergencia.innerText = fmt(totalEmergencia);
-    capUtilidad.innerText = fmt(totalUtilidadNeta);
-};
-
 // --- AÑADIR NUEVA UNIDAD ---
 window.addUnit = async () => {
     const input = document.getElementById('new-unit-input');
@@ -846,18 +708,19 @@ if (catList) {
 }
 // --- RENDERIZAR DISTRIBUCIÓN DE GASTOS (BARRAS) ---
 // 1. LA FUNCIÓN PRINCIPAL (Sustituye la que tienes)
-window.renderReportBreakdown = (dataRecibida) => {
+window.renderReportBreakdown = () => {
     const container = document.getElementById('lista-breakdown');
     const wrapper = document.getElementById('report-breakdown-container');
     const titleElem = document.getElementById('breakdown-title');
     const iconElem = document.getElementById('breakdown-icon');
     
+    // Filtro inteligente
+    const filtro = document.getElementById('global-filter')?.value || 'all';
+    
     if (!container || !wrapper) return;
 
-    // Si no recibe data (ej. llamada directa), intenta filtrar de nuevo, 
-    // pero lo ideal es que renderHistory se la pase.
-    const data = dataRecibida || localTransactions.filter(t => {
-        const filtro = document.getElementById('global-filter')?.value || 'all';
+    // Filtrar data por Periodo y Tipo
+    const data = localTransactions.filter(t => {
         const cumpleFecha = (filtro === 'all') || (t.date && t.date.startsWith(filtro));
         return cumpleFecha && t.type === reportSubView;
     });
@@ -870,8 +733,6 @@ window.renderReportBreakdown = (dataRecibida) => {
     wrapper.classList.remove('hidden');
     const isIncome = reportSubView === 'income';
     
-    titleElem.innerText = isIncome ? 'Ingresos por Unidad' : 'Gastos por Unidad';
-    iconElem.innerText = isIncome ? '📊' : '📉';
 
     const accentColor = isIncome ? 'text-green-600' : 'text-red-600';
     const barColor = isIncome ? 'bg-green-500' : 'bg-red-500';
@@ -882,7 +743,7 @@ window.renderReportBreakdown = (dataRecibida) => {
     data.forEach(t => {
         const u = t.unit || 'Sin Unidad';
         const c = t.category || (isIncome ? 'Sin Contrato' : 'Sin Categoría');
-        const monto = Number(t.amount) || 0;
+        const monto = parseFloat(t.amount) || 0;
 
         if (!mapaUnidades[u]) mapaUnidades[u] = { total: 0, cats: {} };
         mapaUnidades[u].total += monto;
@@ -892,10 +753,32 @@ window.renderReportBreakdown = (dataRecibida) => {
 
     let html = '';
 
-    // SECCIÓN A: Por Unidad
+  // SECCIÓN B: Resumen Global
+    const totalGeneral = Object.values(totalesGlobalesPorCat).reduce((a, b) => a + b, 0);
+    html += `
+        <div class="mt-8 pt-1 border-t-2 border-dashed border-slate-200">
+            <h4 class="text-[9px] font-black uppercase text-slate-400 mb-4 tracking-widest text-center italic">Resumen Global</h4>
+            <div class="space-y-4">
+                ${window.generarBarrasInternas(totalesGlobalesPorCat, totalGeneral, 'bg-blue-600', 'text-blue-600')}
+            </div>
+        </div>
+    `;
+  
+    // 2. TÍTULO INTERMEDIO (Aquí es donde lo querías)
+    html += `
+        <div class="flex items-center gap-3 py-4 px-2">
+            <span class="text-xl">${isIncome ? '📊' : '📉'}</span>
+            <h2 class="text-[12px] font-black uppercase tracking-widest text-slate-800">
+                ${isIncome ? 'Ingresos por Unidad' : 'Gastos por Unidad'}
+            </h2>
+            <div class="h-[1px] flex-1 bg-slate-200"></div>
+        </div>
+    `;
+
+    // 3. SECCIÓN: Por Unidad (ABAJO)
     Object.entries(mapaUnidades).sort((a, b) => b[1].total - a[1].total).forEach(([unidad, info]) => {
         html += `
-            <div class="mb-6 p-5 bg-slate-50 rounded-[2rem] border border-slate-100">
+            <div class="mb-6 p-5 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm">
                 <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-2">
                     <span class="text-[11px] font-black uppercase text-slate-700 italic">📦 ${unidad}</span>
                     <span class="text-lg font-black ${accentColor}">L ${info.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
@@ -903,23 +786,15 @@ window.renderReportBreakdown = (dataRecibida) => {
                 <div class="space-y-4">
                     ${window.generarBarrasInternas(info.cats, info.total, barColor, accentColor)}
                 </div>
-            </div>`;
-    });
-
-    // SECCIÓN B: Resumen Global
-    const totalGeneral = Object.values(totalesGlobalesPorCat).reduce((a, b) => a + b, 0);
-    html += `
-        <div class="mt-8 pt-6 border-t-2 border-dashed border-slate-200">
-            <h4 class="text-[9px] font-black uppercase text-slate-400 mb-4 tracking-widest text-center italic">Resumen Global</h4>
-            <div class="space-y-4">
-                ${window.generarBarrasInternas(totalesGlobalesPorCat, totalGeneral, 'bg-blue-600', 'text-blue-600')}
             </div>
-        </div>`;
+        `;
+    });
 
     container.innerHTML = html;
 };
 
-// FUNCIÓN AUXILIAR
+// 2. LA FUNCIÓN AUXILIAR (Esta es la que te falta o no encuentra)
+// Le ponemos window. para que sea accesible desde cualquier parte
 window.generarBarrasInternas = (diccionarioCats, totalPadre, colorBarra, colorTexto) => {
     return Object.entries(diccionarioCats)
         .sort((a, b) => b[1] - a[1])
@@ -941,7 +816,8 @@ window.generarBarrasInternas = (diccionarioCats, totalPadre, colorBarra, colorTe
                     <div class="w-full h-2 bg-white rounded-full overflow-hidden border border-slate-100 shadow-inner">
                         <div class="h-full ${colorBarra} transition-all duration-1000" style="width: ${porcentaje}%"></div>
                     </div>
-                </div>`;
+                </div>
+            `;
         }).join('');
 };
 
@@ -1173,71 +1049,80 @@ window.calcularTarifa = () => {
     let totalKmDía1 = 0;
     let pagoChoferTotal = 0;
     let viaticosChoferTotal = 0;
-    let precioGalon = 94; 
+    let precioGalon = 105; 
 
-    // 1. TARIFA DE COBRO
+    // 1. LÓGICA DE COBRO POR TRAMOS
     if (bus === 'hiace') {
-        if (km <= 30) totalKmDía1 = 1000;
-        else if (km <= 50) totalKmDía1 = km * 30;
-        else if (km <= 100) totalKmDía1 = km * 20;
-        else if (km <= 200) totalKmDía1 = km * 16;
-        else if (km <= 600) totalKmDía1 = km * 11;
-        else totalKmDía1 = km * 10;
+        if (km <= 40) totalKmDía1 = 1200; 
+        else if (km <= 110) totalKmDía1 = 1200 + ((km - 40) * 11.43);
+        else if (km <= 160) totalKmDía1 = 2000 + ((km - 110) * 16.00);
+        else if (km <= 360) totalKmDía1 = 2800 + ((km - 160) * 7.00);
+        else if (km <= 460) totalKmDía1 = 4200 + ((km - 360) * 10.00);
+        else if (km <= 660) totalKmDía1 = 5200 + ((km - 460) * 11.50);
+        else totalKmDía1 = 7500 + ((km - 660) * 11.00);
     } else { 
-        if (km <= 30) totalKmDía1 = 1500;
-        else if (km <= 50) totalKmDía1 = km * 42;
-        else if (km <= 100) totalKmDía1 = km * 32;
-        else if (km <= 200) totalKmDía1 = km * 28;
-        else if (km <= 600) totalKmDía1 = km * 16;
-        else totalKmDía1 = km * 14;
+        if (km <= 40) totalKmDía1 = 1700;
+        else if (km <= 110) totalKmDía1 = 1700 + ((km - 40) * 22.86);
+        else if (km <= 160) totalKmDía1 = 3300 + ((km - 110) * 24.00);
+        else if (km <= 360) totalKmDía1 = 4500 + ((km - 160) * 7.50);
+        else if (km <= 460) totalKmDía1 = 6000 + ((km - 360) * 15.00);
+        else if (km <= 660) totalKmDía1 = 7500 + ((km - 460) * 7.50);
+        else totalKmDía1 = 9000 + ((km - 660) * 7.50);
     }
 
-   // 2. GASTOS (Chofer + Viáticos)
-if (zona === 'nacional') {
-    if (km <= 30) { 
-        pagoChoferTotal = 500; 
-        viaticosChoferTotal = 200; // Mantuve un valor de viáticos, ajústalo si es necesario
-    } 
-    else if (km <= 350) { 
-        pagoChoferTotal = 700; 
-        viaticosChoferTotal = 300; 
-    } 
-    else { 
+    // 2. GASTOS (Chofer + Viáticos)
+    if (zona === 'nacional') {
+        if (km <= 40) { 
+            pagoChoferTotal = 500; 
+            viaticosChoferTotal = 200; 
+        } 
+        else if (km <= 360) { 
+            pagoChoferTotal = 700; 
+            viaticosChoferTotal = 300; 
+        } 
+        else if (km >= 400) { 
+            pagoChoferTotal = 1000; 
+            viaticosChoferTotal = 500; 
+        } else {
+            pagoChoferTotal = 800; 
+            viaticosChoferTotal = 400;
+        }
+    } else { 
+        // ZONA INTERNACIONAL: 
+        // El pago y viático se calculan SOLO por el primer día (1)
+        // porque el "paquete" de día extra ya cubre los costos de los días siguientes.
         pagoChoferTotal = 1000; 
-        viaticosChoferTotal = 300; 
+        viaticosChoferTotal = 1000; 
     }
-} else { 
-    // Zona Internacional/Especial
-    pagoChoferTotal = 1000;
-    viaticosChoferTotal = 1000;
-}
 
     // 3. COMBUSTIBLE
-    const rendimiento = bus === 'hiace' ? 30 : 20;
+    const rendimiento = bus === 'hiace' ? 30 : 20; 
     const costoFuel = (km / rendimiento) * precioGalon;
 
     // 4. COBRO DÍAS EXTRAS
     const cobroPaqueteExtra = zona === 'internacional' ? 8000 : 5000;
     const totalCobroDiasExtra = (days - 1) * cobroPaqueteExtra;
 
-    // 5. CÁLCULO INICIAL
-    const granTotalCobro = Math.round((totalKmDía1 + totalCobroDiasExtra) / 100) * 100;
+    // 5. CÁLCULO FINAL
+    const granTotalCobro = Math.round(totalKmDía1 + totalCobroDiasExtra);
     
-    // Guardamos los gastos en la variable global para el recálculo manual
-    gastosOperativosGlobal = pagoChoferTotal + viaticosChoferTotal + costoFuel;
+    // Gastos Operativos: Aquí ya no se multiplica por "days" en internacional
+    // reflejando que el costo ya está absorbido por el paquete extra.
+    window.gastosOperativosGlobal = pagoChoferTotal + viaticosChoferTotal + costoFuel;
 
     // 6. MOSTRAR RESULTADOS
-    document.getElementById('calc-result').classList.remove('hidden');
-    
-    // Asignamos al input .value y a los textos .innerText
+    const resContainer = document.getElementById('calc-result');
+    if (resContainer) resContainer.classList.remove('hidden');
+
     document.getElementById('res-total').value = granTotalCobro;
-    document.getElementById('res-val-km').innerText = `L ${totalKmDía1.toLocaleString('en-US')}`;
+    document.getElementById('res-val-km').innerText = `L ${Math.round(totalKmDía1).toLocaleString('en-US')}`;
     document.getElementById('res-val-days').innerText = `L ${totalCobroDiasExtra.toLocaleString('en-US')}`;
     document.getElementById('res-val-chofer').innerText = `L ${(pagoChoferTotal + viaticosChoferTotal).toLocaleString('en-US')}`;
     document.getElementById('res-val-fuel').innerText = `L ${costoFuel.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
     
-    // Llamamos a la función para que calcule la utilidad la primera vez
-    recalcularUtilidadManual();
+    if (typeof recalcularUtilidadManual === "function") {
+        recalcularUtilidadManual();
+    }
 };
 
 // Nueva función para cuando tú modifiques el precio a mano
@@ -1324,19 +1209,17 @@ window.enviarCotizacionWhatsApp = () => {
 const q = query(collection(db, 'usuarios', USER_ID, 'movimientos'), orderBy('createdAt', 'desc'));
 
 onSnapshot(q, (snapshot) => {
-    // ESTA LÍNEA ES VITAL: Vacía la lista local antes de meter los datos nuevos
-    localTransactions = []; 
+    localTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderDashboard();
+    renderHistory();
+    localTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    localTransactions = snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-    }));
-
-    // Actualizamos visualmente todo
+    // 1. Primero actualizamos el selector con los meses reales que vinieron de Firebase
     window.updateFilterOptions(); 
+    
+    // 2. Luego dibujamos todo lo demás
     renderDashboard();
     if (typeof renderHistory === 'function') renderHistory();
-    if (typeof renderCapital === 'function') renderCapital();
 });
 
 // Inicializar
