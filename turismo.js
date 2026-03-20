@@ -1040,6 +1040,9 @@ window.exportToExcel = () => {
 
 let gastosOperativosGlobal = 0;
 
+// Declaramos la variable al inicio para que ambas funciones la vean
+window.gastosOperativosGlobal = 0;
+
 window.calcularTarifa = () => {
     const bus = document.getElementById('calc-bus').value;
     const zona = document.getElementById('calc-dest').value;
@@ -1051,7 +1054,7 @@ window.calcularTarifa = () => {
     let viaticosChoferTotal = 0;
     let precioGalon = 105; 
 
-    // 1. LÓGICA DE COBRO POR TRAMOS
+    // 1. LÓGICA DE COBRO POR TRAMOS (Tu lógica está perfecta aquí)
     if (bus === 'hiace') {
         if (km <= 40) totalKmDía1 = 1200; 
         else if (km <= 110) totalKmDía1 = 1200 + ((km - 40) * 11.43);
@@ -1072,27 +1075,12 @@ window.calcularTarifa = () => {
 
     // 2. GASTOS (Chofer + Viáticos)
     if (zona === 'nacional') {
-        if (km <= 40) { 
-            pagoChoferTotal = 500; 
-            viaticosChoferTotal = 200; 
-        } 
-        else if (km <= 360) { 
-            pagoChoferTotal = 700; 
-            viaticosChoferTotal = 300; 
-        } 
-        else if (km >= 400) { 
-            pagoChoferTotal = 1000; 
-            viaticosChoferTotal = 500; 
-        } else {
-            pagoChoferTotal = 800; 
-            viaticosChoferTotal = 400;
-        }
+        if (km <= 40) { pagoChoferTotal = 500; viaticosChoferTotal = 200; } 
+        else if (km <= 360) { pagoChoferTotal = 700; viaticosChoferTotal = 300; } 
+        else if (km >= 400) { pagoChoferTotal = 1000; viaticosChoferTotal = 500; } 
+        else { pagoChoferTotal = 800; viaticosChoferTotal = 400; }
     } else { 
-        // ZONA INTERNACIONAL: 
-        // El pago y viático se calculan SOLO por el primer día (1)
-        // porque el "paquete" de día extra ya cubre los costos de los días siguientes.
-        pagoChoferTotal = 1000; 
-        viaticosChoferTotal = 1000; 
+        pagoChoferTotal = 1000; viaticosChoferTotal = 1000; 
     }
 
     // 3. COMBUSTIBLE
@@ -1106,8 +1094,7 @@ window.calcularTarifa = () => {
     // 5. CÁLCULO FINAL
     const granTotalCobro = Math.round(totalKmDía1 + totalCobroDiasExtra);
     
-    // Gastos Operativos: Aquí ya no se multiplica por "days" en internacional
-    // reflejando que el costo ya está absorbido por el paquete extra.
+    // GUARDAMOS EN LA VARIABLE GLOBAL para que la otra función la use
     window.gastosOperativosGlobal = pagoChoferTotal + viaticosChoferTotal + costoFuel;
 
     // 6. MOSTRAR RESULTADOS
@@ -1120,24 +1107,26 @@ window.calcularTarifa = () => {
     document.getElementById('res-val-chofer').innerText = `L ${(pagoChoferTotal + viaticosChoferTotal).toLocaleString('en-US')}`;
     document.getElementById('res-val-fuel').innerText = `L ${costoFuel.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
     
-    if (typeof recalcularUtilidadManual === "function") {
-        recalcularUtilidadManual();
-    }
+    // Llamamos al recalculo manual para que pinte la utilidad inicial
+    window.recalcularUtilidadManual();
 };
 
-// Nueva función para cuando tú modifiques el precio a mano
 window.recalcularUtilidadManual = () => {
     const totalEditable = parseFloat(document.getElementById('res-total').value) || 0;
-    const utilidadFinal = totalEditable - gastosOperativosGlobal;
+    const utilidadFinal = totalEditable - window.gastosOperativosGlobal;
     
     const labelUtilidad = document.getElementById('res-val-utilidad');
+    if (!labelUtilidad) return;
+
     labelUtilidad.innerText = `L ${utilidadFinal.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
     
-    // Si la utilidad es negativa, se pone en rojo
+    // Cambiamos el color según el resultado (Uso de clases más seguro)
     if(utilidadFinal < 0) {
-        labelUtilidad.classList.replace('text-emerald-400', 'text-red-400');
+        labelUtilidad.classList.remove('text-emerald-400');
+        labelUtilidad.classList.add('text-red-400');
     } else {
-        labelUtilidad.classList.replace('text-red-400', 'text-emerald-400');
+        labelUtilidad.classList.remove('text-red-400');
+        labelUtilidad.classList.add('text-emerald-400');
     }
 };
 
