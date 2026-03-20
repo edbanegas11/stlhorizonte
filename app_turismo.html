@@ -80,22 +80,16 @@
                     </button>
                 </div>
 
-                <div class="bg-white rounded-[2rem] p-2 grid grid-cols-3 gap-2 border border-slate-100 card-shadow">
-    <div class="bg-blue-50 p-3 rounded-[1.5rem] border border-blue-100 text-center">
-        <p class="text-[7px] font-black uppercase text-blue-400 mb-1">Entradas</p>
-        <p id="dash-total-in" class="text-[13px] font-black text-blue-600 tracking-tighter">L 0.00</p>
-    </div>
-    
-    <div class="bg-rose-50 p-3 rounded-[1.5rem] border border-rose-100 text-center">
-        <p class="text-[7px] font-black uppercase text-rose-400 mb-1">Salidas</p>
-        <p id="dash-total-out" class="text-[13px] font-black text-rose-600 tracking-tighter">L 0.00</p>
-    </div>
-
-    <div class="bg-emerald-50 p-3 rounded-[1.5rem] border border-emerald-100 text-center">
-        <p class="text-[7px] font-black uppercase text-emerald-400 mb-1">Utilidad</p>
-        <p id="dash-total-util" class="text-[13px] font-black text-emerald-600 tracking-tighter">L 0.00</p>
-    </div>
-</div>
+                <div class="bg-white rounded-[2rem] p-2 flex gap-2 border border-slate-100 card-shadow">
+                    <div class="flex-1 bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100">
+                        <p class="text-[8px] font-black uppercase text-slate-400 mb-1">Entradas</p>
+                        <p id="dash-total-in" class="text-md font-black text-emerald-600 tracking-tighter">L 0.00</p>
+                    </div>
+                    <div class="flex-1 bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100">
+                        <p class="text-[8px] font-black uppercase text-slate-400 mb-1">Salidas</p>
+                        <p id="dash-total-out" class="text-md font-black text-rose-600 tracking-tighter">L 0.00</p>
+                    </div>
+                </div>
 
                 <div class="space-y-4">
                     <div class="flex justify-between items-center px-2">
@@ -106,7 +100,6 @@
                         </div>
                 </div>
             </section>
-
 
             <section id="view-income" class="hidden bg-white p-8 rounded-[3rem] shadow-2xl space-y-6">
     <h2 class="text-lg font-black text-green-600 uppercase italic">Nuevo Ingreso</h2>
@@ -176,66 +169,6 @@
         </div>
     </div>
 </section>
-          
-          <section id="view-capital" class="hidden space-y-6 pb-20">
-
-    <header class="mt-4 bg-[#08121e] rounded-[1.5rem] p-5 text-white shadow-2xl">
-
-        <h2 class="text-[14px] font-black uppercase tracking-widest text-amber-400">Gestión de Capital</h2>
-
-        <p class="text-[9px] text-slate-400 font-bold uppercase">Distribución de Utilidades y Reservas</p>
-
-    </header>
-
-
-
-    <div class="grid grid-cols-2 gap-4">
-
-        
-
-        <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 text-center">
-
-            <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Utilidad Neta</p>
-
-            <p id="cap-utilidad" class="text-lg font-black text-emerald-600">L 0.00</p>
-
-        </div>
-      
-      <div class="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 text-center">
-
-            <p class="text-[8px] font-black text-slate-400 uppercase mb-1">Fondo Emergencia</p>
-
-            <p id="cap-emergencia" class="text-lg font-black text-blue-600">L 0.00</p>
-
-        </div>
-
-    </div>
-
-
-
-    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl space-y-4">
-
-        <h3 class="text-[10px] font-black uppercase text-slate-800 italic">Mover Saldo Operativo</h3>
-
-        <input type="number" id="move-amount" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none" placeholder="0.00">
-
-        
-
-        <div class="grid grid-cols-2 gap-2">
-
-           
-
-            <button onclick="distribuirCapital('utilidad')" class="bg-emerald-600 text-white p-3 rounded-xl font-black text-[10px] uppercase">A Utilidad Neta</button>
-          
-           <button onclick="distribuirCapital('emergencia')" class="bg-blue-600 text-white p-3 rounded-xl font-black text-[10px] uppercase">A Emergencias</button>
-
-        </div>
-
-        <p class="text-[8px] text-slate-400 text-center italic">Esto restará del balance mensual y lo guardará en tu capital.</p>
-
-    </div>
-
-</section> 
 
             <section id="view-history" class="hidden mt-8 space-y-6 pb-10">
     <header class="mt-4 relative overflow-hidden bg-[#08121e] rounded-[1.5rem] p-4 text-white shadow-2xl border border-slate-800/50">
@@ -279,9 +212,9 @@
 </div>
 
     <div id="report-breakdown-container" class="hidden bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 mx-2">
-    <div class="flex items-center gap-2 mb-4">
-        <span id="breakdown-icon" class="text-blue-500">⏱️</span>
-        <h3 id="breakdown-title" class="text-[10px] font-black uppercase text-slate-400 tracking-widest italic">Distribución</h3>
+    <div class="flex items-center gap-2 mb-1">
+        
+        
     </div>
       
     <div id="lista-breakdown" class="space-y-4"></div>
@@ -489,15 +422,6 @@
         </div>
         <span class="text-[8px] font-black uppercase tracking-widest italic text-slate-400">Reportes</span>
     </button>
-          
-          <button id="nav-capital" onclick="showView('capital')" class="flex flex-col items-center gap-1 group flex-1 transition-all opacity-40">
-    <div class="p-2 rounded-2xl group-active:scale-90 transition-transform text-slate-400">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path>
-        </svg>
-    </div>
-    <span class="text-[8px] font-black uppercase tracking-widest italic text-slate-400">Capital</span>
-</button>
 
     <button id="nav-calc" onclick="showView('calculator')" class="flex flex-col items-center gap-1 group flex-1 transition-all opacity-40">
         <div class="p-2 rounded-2xl group-active:scale-90 transition-transform text-slate-400">
