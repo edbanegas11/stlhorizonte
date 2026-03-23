@@ -190,36 +190,63 @@ window.editTransaction = (id) => {
         `;
     } else {
         title.innerText = "Editar Gasto";
-        title.className = "text-xl font-black text-rose-600 uppercase italic tracking-tighter";
+title.classList.remove('text-blue-600'); // Limpiamos colores previos
+title.classList.add('text-rose-600');
 
-        catContainer.innerHTML = dateHTML + `
-            <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1 italic">Detalle de Gastos</p>
-            <div id="edit-scroll-container" class="grid grid-cols-1 gap-3 max-h-[45vh] overflow-y-auto pr-2 custom-scroll pb-4">
-                ${catEgresos.map(cat => {
-                    const esMismaCat = (t.category === cat);
-                    return `
-                        <div id="edit-card-${cat.replace(/\s+/g, '')}" 
-                             class="bg-slate-50 p-3 rounded-2xl border-2 transition-all ${esMismaCat ? 'border-rose-300 bg-rose-50/30' : 'border-transparent'}">
-                            <span class="text-[10px] font-black uppercase ${esMismaCat ? 'text-rose-600' : 'text-slate-500'} ml-1">${cat}</span>
-                            <div class="flex gap-2 mt-1">
-                                <input type="text" data-edit-desc="${cat}" value="${esMismaCat ? (t.description || '') : ''}"
-                                    oninput="this.value = this.value.toUpperCase()"
-                                    class="flex-1 p-3 bg-white rounded-xl text-sm font-bold outline-none border border-slate-200 uppercase" style="font-size: 16px;">
-                                <input type="number" step="0.01" data-cat="${cat}" value="${esMismaCat ? t.amount : ''}" inputmode="decimal"
-                                    class="edit-expense-input w-24 p-3 bg-white rounded-xl text-right font-black text-rose-600 outline-none border border-slate-200" style="font-size: 16px;">
-                            </div>
-                        </div>`;
-                }).join('')}
-            </div>
-        `;
+catContainer.innerHTML = dateHTML + `
+    <div class="flex items-center gap-2 mb-3 mt-2">
+        <div class="h-[1px] flex-1 bg-slate-100"></div>
+        <p class="text-[10px] font-black uppercase text-slate-400 italic tracking-widest">Detalle de Gastos</p>
+        <div class="h-[1px] flex-1 bg-slate-100"></div>
+    </div>
+    
+    <div id="edit-list-wrapper" class="space-y-3">
+        ${catEgresos.map(cat => {
+            const esMismaCat = (t.category === cat);
+            return `
+                <div id="edit-card-${cat.replace(/\s+/g, '')}" 
+                     class="p-4 rounded-[2rem] border-2 transition-all duration-300 
+                     ${esMismaCat ? 'border-rose-300 bg-rose-50/50 shadow-sm' : 'border-slate-50 bg-slate-50/30'}">
+                    
+                    <span class="text-[10px] font-black uppercase ${esMismaCat ? 'text-rose-600' : 'text-slate-400'} ml-1">
+                        ${cat}
+                    </span>
+                    
+                    <div class="flex gap-2 mt-2">
+                        <input type="text" data-edit-desc="${cat}" 
+                            value="${esMismaCat ? (t.description || '') : ''}"
+                            oninput="this.value = this.value.toUpperCase()"
+                            placeholder="DESCRIPCIÓN"
+                            class="flex-1 p-3 bg-white rounded-xl text-[15px] font-bold outline-none border border-slate-200 focus:border-rose-200 uppercase">
+                        
+                        <input type="number" step="0.01" data-cat="${cat}" 
+                            value="${esMismaCat ? t.amount : ''}" 
+                            inputmode="decimal"
+                            placeholder="0.00"
+                            class="edit-expense-input w-28 p-3 bg-white rounded-xl text-right font-black text-rose-600 outline-none border border-slate-200 focus:border-rose-300 text-[15px]">
+                    </div>
+                </div>`;
+        }).join('')}
+    </div>
+`;
         
         // --- Lógica de Auto-Scroll ---
         setTimeout(() => {
-            const activeCard = document.getElementById(`edit-card-${t.category.replace(/\s+/g, '')}`);
-            if (activeCard) {
-                activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }, 100);
+    const activeCard = document.getElementById(`edit-card-${t.category.replace(/\s+/g, '')}`);
+    if (activeCard) {
+        activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Al tocar un input, centramos la tarjeta para que el teclado de iOS no la tape
+    const inputs = document.querySelectorAll('#edit-main-content input');
+    inputs.forEach(inp => {
+        inp.addEventListener('focus', (e) => {
+            setTimeout(() => {
+                e.target.closest('[id^="edit-card-"]').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        });
+    });
+}, 200);
     }
     
     modal.classList.remove('hidden');
@@ -831,10 +858,16 @@ window.renderReportBreakdown = () => {
     Object.entries(mapaUnidades).sort((a, b) => b[1].total - a[1].total).forEach(([unidad, info]) => {
         html += `
             <div class="mb-6 p-5 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm">
-                <div class="flex justify-between items-center mb-4 border-b border-slate-200 pb-2">
-                    <span class="text-[11px] font-black uppercase text-slate-700 italic">📦 ${unidad}</span>
-                    <span class="text-lg font-black ${accentColor}">L ${info.total.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                <div class="flex justify-between items-end mb-4 border-b border-slate-200 pb-2 gap-2">
+                    <span class="text-[10px] font-black uppercase text-slate-500 italic truncate min-w-0 pb-1">
+                        📦 ${unidad}
+                    </span>
+                    
+                    <span class="text-[17px] font-black ${accentColor} whitespace-nowrap leading-none tracking-tighter shrink-0">
+                        L ${info.total.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                    </span>
                 </div>
+
                 <div class="space-y-4">
                     ${window.generarBarrasInternas(info.cats, info.total, barColor, accentColor)}
                 </div>
