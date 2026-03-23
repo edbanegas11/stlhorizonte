@@ -104,7 +104,9 @@
                 </div>
             </section>
 
-           <section id="view-income" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl space-y-6 border border-slate-100">
+           <section id="view-income" class="hidden min-h-screen bg-white p-6 rounded-[2.5rem] shadow-2xl space-y-6 border border-slate-100" 
+    style="padding-top: calc(1.5rem + env(safe-area-inset-top));">
+    
     <div class="flex justify-between items-center">
         <h2 class="text-xl font-black text-emerald-600 uppercase italic tracking-tighter">Nuevo Ingreso</h2>
         <span class="bg-emerald-100 text-emerald-700 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">Contratos</span>
@@ -142,7 +144,7 @@
             <input type="date" id="in-date" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-[16px] outline-none border-2 border-transparent focus:border-emerald-200">
         </div>
       
-        <div class="pt-4 space-y-4">
+        <div class="pt-4 space-y-4" style="padding-bottom: 100px;">
             <button onclick="saveIncome()" class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase shadow-xl shadow-emerald-200 active:scale-95 transition-all text-sm">
                 Confirmar Ingreso
             </button>
@@ -153,10 +155,12 @@
     </div>
 </section>
 
-<section id="view-expense" class="hidden bg-white p-6 rounded-[2.5rem] shadow-2xl space-y-6 border border-slate-100">
+<section id="view-expense" class="hidden min-h-screen bg-white p-6 rounded-[2.5rem] shadow-2xl space-y-6 border border-slate-100"
+    style="padding-top: calc(1.5rem + env(safe-area-inset-top));">
+    
     <div class="flex justify-between items-center">
         <h2 class="text-xl font-black text-rose-600 uppercase italic tracking-tighter">Registro de Gastos</h2>
-        <span class="bg-rose-100 text-rose-700 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">Egresos</span>
+        <span class="bg-rose-100 text-rose-700 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">GASTOS</span>
     </div>
     
     <div class="space-y-4">
@@ -165,15 +169,15 @@
             <select id="ex-unit" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-[16px] outline-none border-2 border-transparent focus:border-rose-200 transition-all"></select>
         </div>
 
-        <div id="container-categorias-dinamicas" class="grid grid-cols-1 gap-3 max-h-[40vh] overflow-y-auto pr-2 py-1 custom-scroll">
-            </div>
+        <div id="container-categorias-dinamicas" class="grid grid-cols-1 gap-3 max-h-[35vh] overflow-y-auto pr-2 py-1 custom-scroll">
+        </div>
       
         <div>
             <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Fecha del Movimiento</p>
             <input type="date" id="ex-date" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-[16px] outline-none border-2 border-transparent focus:border-rose-200 transition-all">
         </div>
 
-        <div class="pt-4 space-y-4">
+        <div class="pt-4 space-y-4" style="padding-bottom: 120px;">
             <button onclick="saveMultipleExpenses()" class="w-full bg-rose-600 text-white py-5 rounded-2xl font-black uppercase shadow-xl shadow-rose-200 active:scale-95 transition-all text-sm">
                 Guardar Gastos
             </button>
@@ -296,39 +300,43 @@
 
         </main>
       
-<div id="modal-edit" class="hidden fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/40 backdrop-blur-md p-0 sm:p-4">
-    <div class="bg-white w-full max-w-md p-6 rounded-t-[2.5rem] shadow-2xl space-y-6 overflow-y-auto max-h-[92vh] border-t border-slate-100" 
-         style="padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem);">
+<div id="modal-edit" class="hidden fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm p-0">
+    <div class="bg-white w-full max-w-md rounded-t-[2.5rem] shadow-2xl flex flex-col max-h-[90vh] border-t border-slate-100" 
+         style="padding-bottom: env(safe-area-inset-bottom);">
         
-        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-2"></div>
+        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto my-4 shrink-0"></div>
         
-        <div class="flex justify-between items-center mb-2">
+        <div class="px-6 flex justify-between items-center mb-4 shrink-0">
             <div>
-                <h2 id="edit-title" class="text-xl font-black text-blue-600 uppercase italic tracking-tighter">Editar Registro</h2>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Modificar información guardada</p>
+                <h2 id="edit-title" class="text-xl font-black uppercase italic tracking-tighter leading-none">Editar</h2>
+                <p id="edit-subtitle" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Modificar información guardada</p>
             </div>
             <button onclick="closeEditModal()" class="bg-slate-100 text-slate-500 p-3 rounded-full active:scale-90 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
         </div>
         
-        <div class="space-y-5">
+        <div id="edit-main-content" class="flex-1 overflow-y-auto px-6 space-y-5 custom-scroll pb-10">
             <input type="hidden" id="edit-id">
 
             <div class="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                <p class="text-[10px] font-black uppercase text-blue-500/70 ml-1 mb-2">Unidad / Vehículo</p>
-                <select id="edit-unit" class="w-full bg-transparent font-bold text-[16px] outline-none appearance-none text-slate-700"></select>
-            </div>
-
-            <div id="edit-cat-container" class="space-y-4">
+                <p class="text-[10px] font-black uppercase text-slate-400 ml-1 mb-2">Unidad / Vehículo</p>
+                <div class="relative">
+                    <select id="edit-unit" class="w-full bg-transparent font-bold text-[16px] outline-none appearance-none text-slate-700 relative z-10"></select>
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
                 </div>
-
-            <div class="pt-2">
-                <button onclick="updateTransactionFirebase()" class="w-full bg-blue-600 text-white py-5 rounded-[1.8rem] font-black uppercase shadow-xl shadow-blue-200 active:scale-95 transition-all text-sm flex items-center justify-center gap-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    Guardar Cambios
-                </button>
             </div>
+
+            <div id="edit-cat-container" class="space-y-4"></div>
+        </div>
+
+        <div class="p-6 pt-2 bg-white border-t border-slate-50 shrink-0">
+            <button onclick="updateTransactionFirebase()" class="w-full bg-blue-600 text-white py-5 rounded-[1.8rem] font-black uppercase shadow-xl shadow-blue-100 active:scale-95 transition-all text-sm flex items-center justify-center gap-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Guardar Cambios
+            </button>
         </div>
     </div>
 </div>
