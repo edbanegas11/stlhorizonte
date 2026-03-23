@@ -138,14 +138,6 @@ window.saveIncome = async () => {
 };
 
 // Asegúrate de agregar "window." al principio
-window.closeEditModal = () => {
-    const modal = document.getElementById('modal-edit');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-};
-
-// Abrir el modal con los datos actuales
 window.editTransaction = (id) => {
     const t = localTransactions.find(item => item.id === id);
     if (!t) return;
@@ -162,35 +154,35 @@ window.editTransaction = (id) => {
         `<option value="${u}" ${u === t.unit ? 'selected' : ''}>${u}</option>`
     ).join('');
 
-    // --- BLOQUE DE FECHA (Común para ambos) ---
+    // --- BLOQUE DE FECHA (Con tamaño de fuente para evitar zoom en iOS) ---
     const dateHTML = `
-        <div class="mb-6">
-            <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Fecha del Movimiento</p>
+        <div class="mb-4 bg-blue-50/30 p-3 rounded-2xl border border-blue-100">
+            <p class="text-[10px] font-black uppercase text-blue-500 ml-2 mb-1">Fecha del Movimiento</p>
             <input type="date" id="edit-date" value="${t.date || ''}" 
-                class="w-full p-4 bg-blue-50/50 rounded-2xl font-bold text-sm outline-none border-2 border-blue-100 text-blue-600">
+                class="w-full bg-transparent font-bold outline-none text-blue-600" style="font-size: 16px;">
         </div>
     `;
 
     if (t.type === 'income') {
         title.innerText = "Editar Ingreso";
-        title.className = "text-lg font-black text-green-600 uppercase italic";
+        title.className = "text-xl font-black text-emerald-600 uppercase italic tracking-tighter";
         
         catContainer.innerHTML = dateHTML + `
             <div class="space-y-4">
-                <div>
-                    <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Monto Lps</p>
-                    <input type="number" id="edit-amount-income" value="${t.amount}" 
-                        class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xl outline-none text-green-600 border-2 border-green-50">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <p class="text-[10px] font-black uppercase text-slate-400 ml-1 mb-1">Monto Lps</p>
+                    <input type="number" id="edit-amount-income" value="${t.amount}" inputmode="decimal"
+                        class="w-full bg-transparent font-black text-2xl outline-none text-emerald-600" style="font-size: 24px;">
                 </div>
                 <div>
                     <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Descripción de Viaje</p>
                     <input type="text" id="edit-description-income" value="${t.description || ''}" 
                         oninput="this.value = this.value.toUpperCase()"
-                        class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none border-2 border-slate-50 uppercase">
+                        class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-100 uppercase" style="font-size: 16px;">
                 </div>
                 <div>
                     <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1">Categoría</p>
-                    <select id="edit-category-income" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-sm outline-none">
+                    <select id="edit-category-income" class="w-full p-4 bg-slate-50 rounded-2xl font-bold outline-none border border-slate-100" style="font-size: 16px;">
                         ${catIngresos.map(c => `<option value="${c}" ${c === t.category ? 'selected' : ''}>${c}</option>`).join('')}
                     </select>
                 </div>
@@ -198,29 +190,48 @@ window.editTransaction = (id) => {
         `;
     } else {
         title.innerText = "Editar Gasto";
-        title.className = "text-lg font-black text-red-600 uppercase italic";
+        title.className = "text-xl font-black text-rose-600 uppercase italic tracking-tighter";
 
         catContainer.innerHTML = dateHTML + `
-            <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1 text-center italic">Detalle de Gasto</p>
-            <div class="grid grid-cols-1 gap-3 max-h-[40vh] overflow-y-auto pr-2 custom-scroll">
+            <p class="text-[10px] font-black uppercase text-slate-400 ml-2 mb-1 italic">Detalle de Gastos</p>
+            <div id="edit-scroll-container" class="grid grid-cols-1 gap-3 max-h-[45vh] overflow-y-auto pr-2 custom-scroll pb-4">
                 ${catEgresos.map(cat => {
                     const esMismaCat = (t.category === cat);
                     return `
-                        <div class="bg-slate-50 p-3 rounded-2xl border ${esMismaCat ? 'border-red-200 bg-red-50/40' : 'border-slate-100'} space-y-2">
-                            <span class="text-[10px] font-black uppercase text-slate-500 ml-1">${cat}</span>
-                            <div class="flex gap-2">
+                        <div id="edit-card-${cat.replace(/\s+/g, '')}" 
+                             class="bg-slate-50 p-3 rounded-2xl border-2 transition-all ${esMismaCat ? 'border-rose-300 bg-rose-50/30' : 'border-transparent'}">
+                            <span class="text-[10px] font-black uppercase ${esMismaCat ? 'text-rose-600' : 'text-slate-500'} ml-1">${cat}</span>
+                            <div class="flex gap-2 mt-1">
                                 <input type="text" data-edit-desc="${cat}" value="${esMismaCat ? (t.description || '') : ''}"
                                     oninput="this.value = this.value.toUpperCase()"
-                                    class="flex-1 p-3 bg-white rounded-xl text-[10px] font-bold outline-none border border-slate-200 uppercase">
-                                <input type="number" step="0.01" data-cat="${cat}" value="${esMismaCat ? t.amount : ''}"
-                                    class="edit-expense-input w-24 p-3 bg-white rounded-xl text-right font-black text-sm outline-none border border-slate-200">
+                                    class="flex-1 p-3 bg-white rounded-xl text-sm font-bold outline-none border border-slate-200 uppercase" style="font-size: 16px;">
+                                <input type="number" step="0.01" data-cat="${cat}" value="${esMismaCat ? t.amount : ''}" inputmode="decimal"
+                                    class="edit-expense-input w-24 p-3 bg-white rounded-xl text-right font-black text-rose-600 outline-none border border-slate-200" style="font-size: 16px;">
                             </div>
                         </div>`;
                 }).join('')}
             </div>
         `;
+        
+        // --- Lógica de Auto-Scroll ---
+        setTimeout(() => {
+            const activeCard = document.getElementById(`edit-card-${t.category.replace(/\s+/g, '')}`);
+            if (activeCard) {
+                activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 100);
     }
+    
     modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Bloquea scroll del fondo
+};
+
+window.closeEditModal = () => {
+    const modal = document.getElementById('modal-edit');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto'; // Libera scroll
+    }
 };
 
 // --- ELIMINAR TRANSACCIÓN ---
