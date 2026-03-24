@@ -860,7 +860,7 @@ window.renderReportBreakdown = () => {
             <div class="mb-6 p-5 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm">
                 <div class="flex justify-between items-end mb-4 border-b border-slate-200 pb-2 gap-2">
                     <span class="text-[10px] font-black uppercase text-slate-500 italic truncate min-w-0 pb-1">
-                        📦 ${unidad}
+                         ${unidad}
                     </span>
                     
                     <span class="text-[17px] font-black ${accentColor} whitespace-nowrap leading-none tracking-tighter shrink-0">
