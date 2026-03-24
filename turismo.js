@@ -818,7 +818,7 @@ window.renderReportBreakdown = () => {
             <div class="mb-6 p-5 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-sm">
                 <div class="flex justify-between items-end mb-4 border-b border-slate-200 pb-2 gap-2">
                     <span class="text-[10px] font-black uppercase text-slate-500 italic truncate min-w-0 pb-1">
-                        📦 ${unidad}
+                        ${unidad}
                     </span>
                     
                     <span class="text-[17px] font-black ${accentColor} whitespace-nowrap leading-none tracking-tighter shrink-0">
@@ -1227,10 +1227,10 @@ window.enviarCotizacionWhatsApp = () => {
     // Formatear para que se vea profesional en el mensaje
     const totalFormat = total.includes('L') ? total : `L ${parseFloat(total).toLocaleString('en-US')}`;
 
-    const mensaje = `*STL HORIZONTE - COTIZACIÓN*%0A%0A` +
+    const mensaje = `*SERVICIOS DE TRANSPORTE "HORIZONTE" - COTIZACIÓN*%0A%0A` +
                     `*Unidad:* ${bus}%0A` +
-                    `*Distancia:* ${km} KM%0A` +
-                    `*Duración:* ${days} Día(s)%0A%0A` +
+                    `*Distancia estimada Ida y Regreso:* ${km} KM%0A` +
+                    `*Duración del viaje:* ${days} Día(s)%0A%0A` +
                     `*TOTAL ESTIMADO:* ${totalFormat}%0A%0A` +
                     `_Precios sujetos a cambios según disponibilidad._`;
 
