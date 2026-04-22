@@ -293,6 +293,22 @@
                         <input type="text" id="new-cat-input" class="flex-1 bg-slate-100 p-3 rounded-xl text-xs font-bold uppercase outline-none" placeholder="Nueva categoría...">
                         <button onclick="addCategory()" class="bg-blue-600 text-white p-3 rounded-xl active:scale-90">+</button>
                     </div>
+                  
+                  <div class="bg-white p-6 rounded-[2.5rem] shadow-xl border border-slate-100 space-y-4">
+    <h3 class="text-[10px] font-black uppercase text-slate-800 tracking-widest italic">Parámetros de Cotización</h3>
+    <div class="flex flex-col gap-2">
+        <label class="text-[10px] font-bold text-slate-400 uppercase ml-2">Precio Galón Diesel (L)</label>
+        <div class="flex gap-2">
+            <input type="number" id="setting-fuel-price" 
+                   class="flex-1 bg-slate-100 p-3 rounded-xl text-xs font-bold outline-none" 
+                   placeholder="Ej: 105.00" step="0.01">
+            <button onclick="saveFuelPrice()" 
+                    class="bg-emerald-500 text-white px-5 rounded-xl active:scale-95 font-bold text-xs uppercase">
+                Guardar
+            </button>
+        </div>
+    </div>
+</div>
                 </div>
             </section>
               
