@@ -1086,6 +1086,22 @@ let gastosOperativosGlobal = 0;
 // Declaramos la variable al inicio para que ambas funciones la vean
 window.gastosOperativosGlobal = 0;
 
+document.addEventListener('DOMContentLoaded', () => {
+    const savedPrice = localStorage.getItem('precioDiesel') || 105;
+    const inputFuel = document.getElementById('setting-fuel-price');
+    if (inputFuel) inputFuel.value = savedPrice;
+});
+
+window.saveFuelPrice = () => {
+    const price = document.getElementById('setting-fuel-price').value;
+    if (price && price > 0) {
+        localStorage.setItem('precioDiesel', price);
+        alert('Precio del combustible actualizado: L ' + price);
+    } else {
+        alert('Por favor ingresa un precio válido');
+    }
+};
+
 window.calcularTarifa = () => {
     const bus = document.getElementById('calc-bus').value;
     const zona = document.getElementById('calc-dest').value;
@@ -1095,25 +1111,25 @@ window.calcularTarifa = () => {
     let totalKmDía1 = 0;
     let pagoChoferTotal = 0;
     let viaticosChoferTotal = 0;
-    let precioGalon = 105; 
+    let precioGalon = parseFloat(localStorage.getItem('precioDiesel')) || 105; 
 
-    // 1. LÓGICA DE COBRO POR TRAMOS (Tu lógica está perfecta aquí)
+    // 1. LÓGICA DE COBRO POR TRAMOS (+10%)
     if (bus === 'hiace') {
-        if (km <= 40) totalKmDía1 = 1200; 
-        else if (km <= 110) totalKmDía1 = 1200 + ((km - 40) * 11.43);
-        else if (km <= 160) totalKmDía1 = 2000 + ((km - 110) * 16.00);
-        else if (km <= 360) totalKmDía1 = 2800 + ((km - 160) * 7.00);
-        else if (km <= 460) totalKmDía1 = 4200 + ((km - 360) * 10.00);
-        else if (km <= 660) totalKmDía1 = 5200 + ((km - 460) * 11.50);
-        else totalKmDía1 = 7500 + ((km - 660) * 11.00);
+        if (km <= 40) totalKmDía1 = 1320; 
+        else if (km <= 110) totalKmDía1 = 1320 + ((km - 40) * 12.57);
+        else if (km <= 160) totalKmDía1 = 2200 + ((km - 110) * 17.60);
+        else if (km <= 360) totalKmDía1 = 3080 + ((km - 160) * 7.70);
+        else if (km <= 460) totalKmDía1 = 4620 + ((km - 360) * 11.00);
+        else if (km <= 660) totalKmDía1 = 5720 + ((km - 460) * 12.65);
+        else totalKmDía1 = 8250 + ((km - 660) * 12.10);
     } else { 
-        if (km <= 40) totalKmDía1 = 1700;
-        else if (km <= 110) totalKmDía1 = 1700 + ((km - 40) * 22.86);
-        else if (km <= 160) totalKmDía1 = 3300 + ((km - 110) * 24.00);
-        else if (km <= 360) totalKmDía1 = 4500 + ((km - 160) * 7.50);
-        else if (km <= 460) totalKmDía1 = 6000 + ((km - 360) * 15.00);
-        else if (km <= 660) totalKmDía1 = 7500 + ((km - 460) * 7.50);
-        else totalKmDía1 = 9000 + ((km - 660) * 7.50);
+        if (km <= 40) totalKmDía1 = 1870;
+        else if (km <= 110) totalKmDía1 = 1870 + ((km - 40) * 25.15);
+        else if (km <= 160) totalKmDía1 = 3630 + ((km - 110) * 26.40);
+        else if (km <= 360) totalKmDía1 = 4950 + ((km - 160) * 8.25);
+        else if (km <= 460) totalKmDía1 = 6600 + ((km - 360) * 16.50);
+        else if (km <= 660) totalKmDía1 = 8250 + ((km - 460) * 8.25);
+        else totalKmDía1 = 9900 + ((km - 660) * 8.25);
     }
 
     // 2. GASTOS (Chofer + Viáticos)
@@ -1126,31 +1142,34 @@ window.calcularTarifa = () => {
         pagoChoferTotal = 1000; viaticosChoferTotal = 1000; 
     }
 
-    // 3. COMBUSTIBLE
+    // 3. COMBUSTIBLE (Redondeado normal para costos internos)
     const rendimiento = bus === 'hiace' ? 30 : 20; 
-    const costoFuel = (km / rendimiento) * precioGalon;
+    const costoFuel = Math.round((km / rendimiento) * precioGalon);
 
     // 4. COBRO DÍAS EXTRAS
     const cobroPaqueteExtra = zona === 'internacional' ? 8000 : 5000;
     const totalCobroDiasExtra = (days - 1) * cobroPaqueteExtra;
 
-    // 5. CÁLCULO FINAL
-    const granTotalCobro = Math.round(totalKmDía1 + totalCobroDiasExtra);
+    // 5. CÁLCULO FINAL Y REDONDEO A LA CENTENA (Eje: 1870 -> 1900)
+    const subTotal = totalKmDía1 + totalCobroDiasExtra;
+    const granTotalCobro = Math.round(subTotal / 100) * 100;
     
-    // GUARDAMOS EN LA VARIABLE GLOBAL para que la otra función la use
+    // Guardamos los gastos operativos para la utilidad
     window.gastosOperativosGlobal = pagoChoferTotal + viaticosChoferTotal + costoFuel;
 
     // 6. MOSTRAR RESULTADOS
     const resContainer = document.getElementById('calc-result');
     if (resContainer) resContainer.classList.remove('hidden');
 
+    // Mostramos el total redondeado a 100s en el input editable
     document.getElementById('res-total').value = granTotalCobro;
+    
+    // Mostramos los desglose con formato de moneda
     document.getElementById('res-val-km').innerText = `L ${Math.round(totalKmDía1).toLocaleString('en-US')}`;
     document.getElementById('res-val-days').innerText = `L ${totalCobroDiasExtra.toLocaleString('en-US')}`;
     document.getElementById('res-val-chofer').innerText = `L ${(pagoChoferTotal + viaticosChoferTotal).toLocaleString('en-US')}`;
-    document.getElementById('res-val-fuel').innerText = `L ${costoFuel.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+    document.getElementById('res-val-fuel').innerText = `L ${costoFuel.toLocaleString('en-US')}`;
     
-    // Llamamos al recalculo manual para que pinte la utilidad inicial
     window.recalcularUtilidadManual();
 };
 
