@@ -1103,74 +1103,102 @@ window.saveFuelPrice = () => {
 };
 
 window.calcularTarifa = () => {
-    const bus = document.getElementById('calc-bus').value;
-    const zona = document.getElementById('calc-dest').value;
-    const km = parseFloat(document.getElementById('calc-km').value) || 0;
-    const days = parseInt(document.getElementById('calc-days').value) || 1;
+    const bus = document.getElementById('calc-bus')?.value || 'hiace';
+    const zona = document.getElementById('calc-dest')?.value || 'nacional';
+    const km = parseFloat(document.getElementById('calc-km')?.value) || 0;
+    const days = parseInt(document.getElementById('calc-days')?.value) || 1;
     
     let totalKmDía1 = 0;
-    let pagoChoferTotal = 0;
-    let viaticosChoferTotal = 0;
+    let pagoChoferDiario = 0;
+    let viaticosChoferDiario = 0;
+    let costoPeaje = 0;
     let precioGalon = parseFloat(localStorage.getItem('precioDiesel')) || 105; 
 
     // 1. LÓGICA DE COBRO POR TRAMOS (+10%)
     if (bus === 'hiace') {
-        if (km <= 40) totalKmDía1 = 1320; 
-        else if (km <= 110) totalKmDía1 = 1320 + ((km - 40) * 12.57);
-        else if (km <= 160) totalKmDía1 = 2200 + ((km - 110) * 17.60);
+        if (km <= 40) totalKmDía1 = 1500; 
+        else if (km <= 110) totalKmDía1 = 1320 + ((km - 40) * 16.60);
+        else if (km <= 160) totalKmDía1 = 2200 + ((km - 110) * 16.60);
         else if (km <= 360) totalKmDía1 = 3080 + ((km - 160) * 7.70);
-        else if (km <= 460) totalKmDía1 = 4620 + ((km - 360) * 11.00);
+        else if (km <= 460) totalKmDía1 = 4620 + ((km - 360) * 10.00);
         else if (km <= 660) totalKmDía1 = 5720 + ((km - 460) * 12.65);
         else totalKmDía1 = 8250 + ((km - 660) * 12.10);
     } else { 
-        if (km <= 40) totalKmDía1 = 1870;
-        else if (km <= 110) totalKmDía1 = 1870 + ((km - 40) * 25.15);
-        else if (km <= 160) totalKmDía1 = 3630 + ((km - 110) * 26.40);
-        else if (km <= 360) totalKmDía1 = 4950 + ((km - 160) * 8.25);
-        else if (km <= 460) totalKmDía1 = 6600 + ((km - 360) * 16.50);
+        if (km <= 40) totalKmDía1 = 1800;
+        else if (km <= 110) totalKmDía1 = 1870 + ((km - 40) * 30.15);
+        else if (km <= 160) totalKmDía1 = 3630 + ((km - 110) * 22.40);
+        else if (km <= 360) totalKmDía1 = 4950 + ((km - 160) * 7.25);
+        else if (km <= 460) totalKmDía1 = 6600 + ((km - 360) * 13.50);
         else if (km <= 660) totalKmDía1 = 8250 + ((km - 460) * 8.25);
         else totalKmDía1 = 9900 + ((km - 660) * 8.25);
     }
 
-    // 2. GASTOS (Chofer + Viáticos)
+    // 2. GASTOS DIARIOS DE CHOFER + VIÁTICOS
     if (zona === 'nacional') {
-        if (km <= 40) { pagoChoferTotal = 500; viaticosChoferTotal = 200; } 
-        else if (km <= 360) { pagoChoferTotal = 700; viaticosChoferTotal = 300; } 
-        else if (km >= 400) { pagoChoferTotal = 1000; viaticosChoferTotal = 500; } 
-        else { pagoChoferTotal = 800; viaticosChoferTotal = 400; }
+        if (km <= 40) { pagoChoferDiario = 500; viaticosChoferDiario = 200; } 
+        else if (km <= 160) { pagoChoferDiario = 600; viaticosChoferDiario = 200; }
+        else if (km <= 360) { pagoChoferDiario = 700; viaticosChoferDiario = 300; } 
+        else if (km >= 400) { pagoChoferDiario = 1000; viaticosChoferDiario = 500; } 
+        else { pagoChoferDiario = 800; viaticosChoferDiario = 400; }
     } else { 
-        pagoChoferTotal = 1000; viaticosChoferTotal = 1000; 
+        pagoChoferDiario = 1000; viaticosChoferDiario = 1000; 
     }
 
-    // 3. COMBUSTIBLE (Redondeado normal para costos internos)
+    // Escalamiento por días de viaje
+    const gastosChoferGlobal = (pagoChoferDiario + viaticosChoferDiario) * days;
+
+    // 3. CÁLCULO DE PEAJE
+    if (bus === 'hiace') {
+        if (km > 100) {
+            costoPeaje = 22 * 4; // 2 ida (44) + 2 vuelta (44) = 88 Lps
+        } else if (km > 50) {
+            costoPeaje = 22 * 2; // 1 ida (22) + 1 vuelta (22) = 44 Lps
+        }
+    } else {
+        // County
+        if (km > 200) {
+            costoPeaje = 90 * 4; // 2 ida (180) + 2 vuelta (180) = 360 Lps
+        } else if (km > 50) {
+            costoPeaje = 90 * 2; // 1 ida (90) + 1 vuelta (90) = 180 Lps
+        }
+    }
+
+    // 4. COMBUSTIBLE
     const rendimiento = bus === 'hiace' ? 30 : 20; 
     const costoFuel = Math.round((km / rendimiento) * precioGalon);
 
-    // 4. COBRO DÍAS EXTRAS
-    const cobroPaqueteExtra = zona === 'internacional' ? 8000 : 5000;
+    // 5. COBRO DÍAS EXTRAS
+    const cobroPaqueteExtra = zona === 'internacional' ? 8000 : 4000;
     const totalCobroDiasExtra = (days - 1) * cobroPaqueteExtra;
 
-    // 5. CÁLCULO FINAL Y REDONDEO A LA CENTENA (Eje: 1870 -> 1900)
+    // 6. TOTALES Y REDONDEO A LA CENTENA
     const subTotal = totalKmDía1 + totalCobroDiasExtra;
     const granTotalCobro = Math.round(subTotal / 100) * 100;
     
-    // Guardamos los gastos operativos para la utilidad
-    window.gastosOperativosGlobal = pagoChoferTotal + viaticosChoferTotal + costoFuel;
+    // Guardamos la suma de todos los gastos operativos (Chofer acumulado + Fuel + Peaje)
+    window.gastosOperativosGlobal = gastosChoferGlobal + costoFuel + costoPeaje;
 
-    // 6. MOSTRAR RESULTADOS
+    // 7. MOSTRAR RESULTADOS
     const resContainer = document.getElementById('calc-result');
     if (resContainer) resContainer.classList.remove('hidden');
 
-    // Mostramos el total redondeado a 100s en el input editable
-    document.getElementById('res-total').value = granTotalCobro;
+    const elTotal = document.getElementById('res-total');
+    if (elTotal) elTotal.value = granTotalCobro;
     
-    // Mostramos los desglose con formato de moneda
-    document.getElementById('res-val-km').innerText = `L ${Math.round(totalKmDía1).toLocaleString('en-US')}`;
-    document.getElementById('res-val-days').innerText = `L ${totalCobroDiasExtra.toLocaleString('en-US')}`;
-    document.getElementById('res-val-chofer').innerText = `L ${(pagoChoferTotal + viaticosChoferTotal).toLocaleString('en-US')}`;
-    document.getElementById('res-val-fuel').innerText = `L ${costoFuel.toLocaleString('en-US')}`;
+    const setFormatText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = `L ${val.toLocaleString('en-US')}`;
+    };
+
+    setFormatText('res-val-km', Math.round(totalKmDía1));
+    setFormatText('res-val-days', totalCobroDiasExtra);
+    setFormatText('res-val-chofer', gastosChoferGlobal);
+    setFormatText('res-val-fuel', costoFuel);
+    setFormatText('res-val-peaje', costoPeaje);
     
-    window.recalcularUtilidadManual();
+    if (typeof window.recalcularUtilidadManual === 'function') {
+        window.recalcularUtilidadManual();
+    }
 };
 
 window.recalcularUtilidadManual = () => {
