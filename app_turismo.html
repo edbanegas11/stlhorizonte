@@ -11,9 +11,6 @@
     
     <title>STL HORIZONTE | FINANZAS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-<script src="tu-archivo-logica.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -21,7 +18,7 @@
         .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         section { animation: fadeIn 0.4s ease-out forwards; }
-       </style>
+     </style>
 </head>
 <body class="bg-slate-50">
     
@@ -31,39 +28,40 @@
         <main id="main-content" class="px-5 pt-6">
             
             <section id="view-dashboard" class="space-y-6">
-              
-              <div class="px-4 mt-5 mb-6">
-    <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Periodo de Visualización</label>
-    <select id="global-filter" onchange="renderDashboard(); renderHistory();" 
-        class="w-full bg-slate-100 border-none rounded-2xl p-3 text-[11px] font-black uppercase text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+
+    <div class="px-4 mt-14 mb-6">
+        <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-2 mb-1 block">Periodo de Visualización</label>
+        <select id="global-filter" onchange="renderDashboard(); renderHistory();" 
+            class="w-full bg-slate-100 border-none rounded-2xl p-3 text-[11px] font-black uppercase text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 transition-all">
         </select>
-</div>
-                
-   <header class="mt-4 relative overflow-hidden bg-[#08121e] rounded-[2rem] p-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] text-white shadow-2xl">
-    <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full -mr-12 -mt-12 blur-2xl"></div>
-    
-    <div class="flex justify-between items-center relative z-10">
+    </div>
+
+    <!-- Se cambió pt-[env(safe-area-inset-top)] por pt-3 -->
+    <header class="mt-1 relative overflow-hidden bg-[#08121e] rounded-[1.5rem] px-4 pt-3 pb-3 text-white shadow-2xl">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+
+         <div class="flex justify-between items-center relative z-10">
         <div class="flex items-baseline gap-2">
             <p class="text-[18px] font-black uppercase tracking-wider">
     <span class="text-white">STE</span> 
     <span class="text-amber-400">TURISMO</span>
 </p>
-        </div>
-        
-        <a href="index.html" class="bg-white/10 p-2 rounded-lg active:scale-90 transition-transform flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            </div>
+
+            <a href="index.html" class="bg-white/10 p-1.5 rounded-lg active:scale-90 transition-transform flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>
-        </a>
-    </div>
+            </a>
+        </div>
 
-    <div class="mt-1 relative z-10 text-center">
-        <p class="text-[9px] uppercase font-bold text-white tracking-[0.2em] mb-0">Balance General</p>
-        <h2 id="balance-total" class="text-3xl font-black tracking-tighter text-amber-400 leading-tight">L 0.00</h2>
+        <div class="mt-0.5 relative z-10 text-center">
+            <p class="text-[9px] uppercase font-bold text-white tracking-[0.2em] mb-0">Balance General</p>
+            <h2 id="balance-total" class="text-2xl font-black tracking-tighter text-amber-400 leading-tight">L 0.00</h2>
     </div>
-</header>
-         
+    </header>
+              
  <div class="grid grid-cols-2 gap-4 px-1">
     <button onclick="showView('income')" 
         class="bg-emerald-500 text-white p-6 rounded-[2.5rem] shadow-lg shadow-emerald-100 active:scale-95 transition-all flex flex-col items-center gap-3 group border-b-4 border-emerald-600">
@@ -85,6 +83,7 @@
         <span class="text-[12px] font-black uppercase tracking-widest">Gasto</span>
     </button>
 </div>
+
 
                 <div class="bg-white rounded-[2rem] p-2 flex gap-2 border border-slate-100 card-shadow">
                     <div class="flex-1 bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100">
