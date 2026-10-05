@@ -835,7 +835,7 @@ window.renderReportBreakdown = () => {
   // SECCIÓN B: Resumen Global
     const totalGeneral = Object.values(totalesGlobalesPorCat).reduce((a, b) => a + b, 0);
     html += `
-        <div class="mt-8 pt-1 border-t-2 border-dashed border-slate-200">
+        <div class="mt-1 pt-1 border-t-2 border-dashed border-slate-200">
             <h4 class="text-[9px] font-black uppercase text-slate-400 mb-4 tracking-widest text-center italic">Resumen Global</h4>
             <div class="space-y-4">
                 ${window.generarBarrasInternas(totalesGlobalesPorCat, totalGeneral, 'bg-blue-600', 'text-blue-600')}
